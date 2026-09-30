@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Course Tracker",
+  "version": "0.1.0",
+  "description": "Deadlines and grade sheet for your Carleton Brightspace courses, synced from your signed-in session.",
+  "action": {
+    "default_title": "Open Course Tracker"
+  },
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "alarms", "scripting", "tabs"],
+  "host_permissions": ["https://brightspace.carleton.ca/*"]
+}

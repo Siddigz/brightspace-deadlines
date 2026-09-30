@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Course Tracker</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>Course Tracker</h1>
+      <p id="sync-status" class="muted">Not synced yet</p>
+    </div>
+    <button id="sync-btn" class="btn primary">Sync now</button>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-view="deadlines" aria-selected="true">Deadlines</button>
+    <button role="tab" data-view="grades" aria-selected="false">Grades</button>
+    <button role="tab" data-view="news" aria-selected="false">Announcements</button>
+  </nav>
+
+  <div id="course-filter" class="chips"></div>
+
+  <main id="view"></main>
+
+  <script type="module" src="src/dashboard.js"></script>
+</body>
+</html>
