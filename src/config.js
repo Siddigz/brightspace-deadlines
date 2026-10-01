@@ -16,6 +16,7 @@ export const COURSE_COLORS = {
   'COMP 2406': '#2563eb',
   'COMP 3000': '#0891b2',
   Carleton: '#6b7280',
+  Personal: '#db2777',
 };
 
 // University-wide dates (Carleton Registrar calendar, 2026-27).
@@ -40,6 +41,14 @@ export const UNIVERSITY_DATES = [
   { title: 'Good Friday: university closed', date: '2027-03-26' },
   { title: 'Last day of winter classes', date: '2027-04-09' },
   { title: 'Winter exam period', date: '2027-04-11', end: '2027-04-23' },
+];
+
+// Your own deadlines, outside any course. They show under "Personal" and can be ticked off.
+// `date` is local time; a bare date means 11:59 PM that day.
+export const PERSONAL_DEADLINES = [
+  { title: 'Online assessment (timed)', date: '2026-10-14', kind: 'test' },
+  { title: 'Club meeting', date: '2026-10-15T18:00', kind: 'event' },
+  { title: 'Renew bus pass', date: '2026-10-16', kind: 'errand' },
 ];
 
 // Due dates for Brightspace items that have none set, matched by course + exact item title.
@@ -86,16 +95,27 @@ export const EXTRA_DEADLINES = [
     gradedAs: `^Tutorial ${n}$`,
     url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_${n}`,
   })),
+  // Your plan: get each tutorial marked at the B2 session the day after it's released (Mondays),
+  // a week before the real deadline above.
+  ...[[4, '2026-10-06'], [5, '2026-11-03'], [6, '2026-11-10'], [7, '2026-11-17'], [8, '2026-11-24']].map(([n, day]) => ({
+    course: 'COMP 3000', title: `Get Tutorial ${n} marked at B2 tutorial (your plan; a week early)`, date: `${day}T18:05`, kind: 'tutorial',
+    gradedAs: `^Tutorial ${n}$`,
+    url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_${n}`,
+  })),
   // Your B2 tutorial sessions (Tue 18:05-19:25, Carleton Central). None in fall break (Oct 27).
   // Dec 1 isn't on the course site but it's the Tutorial 8 sign-off deadline, so it's included.
+  // [day, last chance for tutorial, planned tutorial]
   ...[
-    ['2026-09-15'], ['2026-09-22', 1], ['2026-09-29', 2], ['2026-10-06', 3], ['2026-10-13', 4], ['2026-10-20'],
-    ['2026-11-03'], ['2026-11-10', 5], ['2026-11-17', 6], ['2026-11-24', 7], ['2026-12-01', 8],
-  ].map(([day, due]) => ({
-    course: 'COMP 3000',
-    title: due ? `B2 tutorial (last chance to get Tutorial ${due} marked)` : 'B2 tutorial',
-    date: `${day}T18:05`, end: `${day}T19:25`, kind: 'tutorial',
-  })),
+    ['2026-09-15'], ['2026-09-22', 1], ['2026-09-29', 2], ['2026-10-06', 3, 4], ['2026-10-13', 4], ['2026-10-20'],
+    ['2026-11-03', null, 5], ['2026-11-10', 5, 6], ['2026-11-17', 6, 7], ['2026-11-24', 7, 8], ['2026-12-01', 8],
+  ].map(([day, due, plan]) => {
+    const notes = [plan && `get Tutorial ${plan} marked`, due && `last chance for Tutorial ${due}`].filter(Boolean);
+    return {
+      course: 'COMP 3000',
+      title: notes.length ? `B2 tutorial (${notes.join('; ')})` : 'B2 tutorial',
+      date: `${day}T18:05`, end: `${day}T19:25`, kind: 'tutorial',
+    };
+  }),
   // Section B: in class Wed Oct 21 (section A writes Tue Oct 20).
   { course: 'COMP 3000', title: 'Midterm, in class (closed book)', date: '2026-10-21T08:35', end: '2026-10-21T09:55', kind: 'test' },
   { course: 'COMP 3000', title: 'Final exam (date TBA)', date: '2026-12-12', end: '2026-12-23', kind: 'test', allDay: true },

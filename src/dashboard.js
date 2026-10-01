@@ -16,6 +16,7 @@ const state = {
   showAll: false,
   bonusOnly: false,
   expanded: new Set(),
+  freshNews: new Set(), // unseen when you opened Announcements; stay marked New until you leave the tab
 };
 
 // ---- per-viewer UI memory (never required) ----
@@ -134,6 +135,28 @@ async function sync() {
   }
 }
 
+// ---- announcements you haven't seen ----
+const allNews = () => courses().flatMap((c) => c.news.map((n) => ({ ...n, course: c.code })));
+
+function unseenNews() {
+  const seen = new Set(state.prefs.newsSeen || []);
+  return allNews().filter((n) => !state.hiddenCourses.has(n.course) && !seen.has(n.id));
+}
+
+// The first sync counts everything as seen, so old posts don't light up the tab.
+function markNewsSeen() {
+  const all = allNews();
+  if (!all.length) return;
+  const { prefs } = state;
+  const first = !prefs.newsSeen;
+  const fresh = first ? all : unseenNews();
+  if (!fresh.length) return;
+  if (!first) for (const n of fresh) state.freshNews.add(n.id);
+  const current = new Set(all.map((n) => n.id));
+  prefs.newsSeen = [...(prefs.newsSeen || []).filter((id) => current.has(id)), ...fresh.map((n) => n.id)];
+  savePrefs(prefs);
+}
+
 // ---- views ----
 function renderHeader() {
   const status = document.getElementById('sync-status');
@@ -159,8 +182,13 @@ function renderHeader() {
   for (const b of document.querySelectorAll('.tabs button')) {
     b.setAttribute('aria-selected', String(b.dataset.view === state.view));
   }
+  const unseen = state.view === 'news' ? 0 : unseenNews().length;
+  const badge = document.getElementById('news-badge');
+  badge.hidden = !unseen;
+  badge.textContent = unseen;
+  badge.title = `${unseen} new announcement${unseen === 1 ? '' : 's'}`;
 
-  const chips = courses().length ? [...courses(), { code: 'Carleton', title: 'University dates' }] : [];
+  const chips = courses().length ? [...courses(), { code: 'Carleton', title: 'University dates' }, { code: 'Personal', title: 'Your own deadlines' }] : [];
   document.getElementById('course-filter').innerHTML = chips
     .map((c) => `<button class="chip" data-toggle-course="${esc(c.code)}" aria-pressed="${!state.hiddenCourses.has(c.code)}" title="${esc(c.title)}"><span class="dot" style="--c:${color(c.code)}"></span>${esc(label(c.code))}</button>`)
     .join('');
@@ -355,14 +383,15 @@ function renderNews() {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 40);
   if (!posts.length) return `<div class="empty">No announcements.</div>`;
-  return posts.map((n) => `<article class="news-item">
-    <div class="meta"><span class="tag" style="--c:${color(n.course)}">${esc(label(n.course))}</span>${esc(longFmt.format(new Date(n.date)))}</div>
+  return posts.map((n) => `<article class="news-item ${state.freshNews.has(n.id) ? 'new' : ''}">
+    <div class="meta"><span class="tag" style="--c:${color(n.course)}">${esc(label(n.course))}</span>${esc(longFmt.format(new Date(n.date)))}${state.freshNews.has(n.id) ? '<span class="new-pill">New</span>' : ''}</div>
     <strong>${esc(n.title)}</strong>
     ${n.body ? `<p>${esc(n.body)}</p>` : ''}
   </article>`).join('');
 }
 
 function render() {
+  if (state.view === 'news' || !state.prefs.newsSeen) markNewsSeen();
   renderHeader();
   const view = document.getElementById('view');
   view.innerHTML = state.view === 'grades' ? renderGrades() : state.view === 'news' ? renderNews() : renderDeadlines();
@@ -374,6 +403,7 @@ document.getElementById('sync-btn').addEventListener('click', sync);
 document.querySelector('.tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-view]');
   if (!b) return;
+  if (b.dataset.view !== state.view) state.freshNews.clear();
   state.view = b.dataset.view;
   remember();
   render();

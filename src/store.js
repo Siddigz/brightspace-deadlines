@@ -3,12 +3,13 @@
 
 import { connect, AuthError } from './d2l.js';
 import { syncAll, localDate, courseDeadlines } from './sync.js';
-import { UNIVERSITY_DATES } from './config.js';
+import { UNIVERSITY_DATES, PERSONAL_DEADLINES } from './config.js';
 
 export const DEFAULT_PREFS = {
   done: {}, // deadline id -> true/false (overrides auto-detected state)
   hidden: {}, // deadline id -> true
   custom: [], // [{ id, course, title, due, allDay, kind }]
+  newsSeen: null, // announcement ids you've seen; null until the first sync with announcements
 };
 
 export async function load() {
@@ -58,7 +59,19 @@ const universityDates = UNIVERSITY_DATES.map((x) => ({
   autoDone: false,
 }));
 
+const personalDeadlines = PERSONAL_DEADLINES.map((x) => ({
+  id: `personal:${x.date}:${x.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+  course: 'Personal',
+  title: x.title,
+  kind: x.kind || 'other',
+  due: localDate(x.date),
+  end: null,
+  allDay: false,
+  autoDone: false,
+  url: x.url,
+}));
+
 export function allDeadlines(snapshot, prefs) {
   const fromSync = (snapshot?.courses || []).flatMap(courseDeadlines);
-  return [...fromSync, ...universityDates, ...prefs.custom];
+  return [...fromSync, ...universityDates, ...personalDeadlines, ...prefs.custom];
 }

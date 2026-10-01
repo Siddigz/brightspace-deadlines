@@ -31,10 +31,25 @@ test('COMP 3000 tutorials marked in Brightspace show as done', async () => {
   const { courses: [course] } = await syncAll(client, NOW);
   const c = { deadlines: courseDeadlines(course) };
   const tut = (n) => c.deadlines.find((d) => d.title.startsWith(`Get Tutorial ${n} `));
-  assert.equal(c.deadlines.filter((d) => /^Get Tutorial/.test(d.title)).length, 8);
+  assert.equal(c.deadlines.filter((d) => /^Get Tutorial \d marked by a TA/.test(d.title)).length, 8);
   assert.equal(tut(1).autoDone, true);
   assert.equal(tut(2).autoDone, true);
   assert.equal(tut(3).autoDone, false);
+});
+
+test('COMP 3000 week-early tutorial reminders tick off with the same Brightspace mark', async () => {
+  const client = fakeClient({
+    name: 'Merged COMP3000A:COMP3000B Operating Systems (LEC) Fall 2026',
+    grades: [4, 5].map((n) => ({ Id: n, Name: `Tutorial ${n}`, GradeType: 'Numeric', MaxPoints: 4 })),
+    values: [{ GradeObjectIdentifier: '4', PointsNumerator: 4, PointsDenominator: 4 }],
+  });
+  const { courses: [course] } = await syncAll(client, NOW);
+  const plans = courseDeadlines(course).filter((d) => /^Get Tutorial \d marked at B2 tutorial/.test(d.title));
+  const plan = (n) => plans.find((d) => d.title.startsWith(`Get Tutorial ${n} `));
+  assert.equal(plans.length, 5);
+  assert.equal(new Date(plan(4).due).toString(), new Date(2026, 9, 6, 18, 5).toString());
+  assert.equal(plan(4).autoDone, true);
+  assert.equal(plan(5).autoDone, false);
 });
 
 test('CLCV 2105: quizzes done once both are graded; config mini-assignment gives way to the real folder', async () => {

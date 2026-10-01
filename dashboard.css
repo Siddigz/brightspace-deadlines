@@ -76,6 +76,12 @@ h2 { font-size: 15px; margin: 0; }
   padding: 8px 12px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
 }
 .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-badge {
+  display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px;
+  border-radius: 999px; background: var(--accent); color: var(--accent-text);
+  font-size: 11px; font-weight: 600; line-height: 18px; text-align: center;
+}
+.tab-badge[hidden] { display: none; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
 .chip {
@@ -179,6 +185,8 @@ details.rules li { margin: 3px 0; }
 .news-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
 .news-item .meta { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
 .news-item p { margin: 6px 0 0; white-space: pre-line; color: var(--muted); }
+.news-item.new { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); box-shadow: inset 3px 0 0 var(--accent); }
+.new-pill { font-size: 11px; font-weight: 600; color: var(--accent); }
 
 @media (max-width: 640px) {
   body { padding: 16px 16px 48px; }

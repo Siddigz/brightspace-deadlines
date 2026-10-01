@@ -15,7 +15,8 @@ test('every extra deadline has a known course and a parseable date', () => {
 
 test('outline covers everything in each course', () => {
   const count = (course, re) => EXTRA_DEADLINES.filter((x) => x.course === course && re.test(x.title)).length;
-  assert.equal(count('COMP 3000', /^Get Tutorial \d marked/), 8);
+  assert.equal(count('COMP 3000', /^Get Tutorial \d marked by a TA/), 8);
+  assert.equal(count('COMP 3000', /^Get Tutorial \d marked at B2 tutorial/), 5);
   assert.equal(count('COMP 3000', /^Assignment \d$/), 4);
   assert.equal(count('CLCV 2105', /^Lesson \d+: Quiz 1 and Quiz 2$/), 24);
   assert.equal(count('CLCV 2105', /^Lesson \d+: Mini-assignment/), 24);
