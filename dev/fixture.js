@@ -47,6 +47,10 @@ export const fixture = {
           { id: 'p1', name: 'Term 1: Engagement & Participation', weight: 5, drop: 0 },
           { id: 'bn', name: 'Bonus Marks: Discussion Participation', weight: 3, drop: 2 },
           { id: 'fe', name: 'Fall Exam', weight: 25, drop: 0 },
+          { id: 'ma2', name: 'Term 2: Mini-assignments', weight: 15, drop: 6 },
+          { id: 'q2', name: 'Term 2: Quizzes', weight: 5, drop: 0 },
+          { id: 'p2', name: 'Term 2: Engagement and Participation', weight: 5, drop: 0 },
+          { id: 'we', name: 'Winter Exam', weight: 25, drop: 0 },
         ],
         items: [
           ...Array.from({ length: 12 }, (_, i) => item(`ma${i}`, `Lesson ${i + 1}: Mini-assignment submission`, 'ma1', 100, 1.25)),
@@ -54,6 +58,10 @@ export const fixture = {
           ...Array.from({ length: 12 }, (_, i) => item(`p${i}`, `Lesson ${i + 1}: Participation Report Quiz`, 'p1', 10, 0.4166667, i === 0 ? 0 : null)),
           ...Array.from({ length: 8 }, (_, i) => item(`bn${i}`, `Bonus Marks for Live Group Discussion ${i + 1}`, 'bn', 0.5, 0.375)),
           item('fe', 'Fall Exam', 'fe', 100, 100),
+          ...Array.from({ length: 12 }, (_, i) => item(`mb${i}`, `Lesson ${i + 13}: Mini-assignment submission`, 'ma2', 100, 1.25)),
+          ...Array.from({ length: 24 }, (_, i) => item(`qb${i}`, `Lesson ${Math.floor(i / 2) + 13}: Quiz ${(i % 2) + 1}`, 'q2', 100, 0.2083333)),
+          ...Array.from({ length: 12 }, (_, i) => item(`pb${i}`, `Lesson ${i + 13}: Participation Report Quiz`, 'p2', 10, 0.4166667)),
+          item('we', 'Winter Exam', 'we', 100, 100),
         ],
       },
       deadlines: [
@@ -108,7 +116,9 @@ export const fixture = {
           { id: 'a', name: 'Assignments', weight: null, drop: 0 },
           { id: 'e', name: 'Exams', weight: null, drop: 0 },
         ],
-        items: [item('t1', 'Tutorial 1', 't', 4, 10, 4), item('t2', 'Tutorial 2', 't', 4, 10, 4), item('t3', 'Tutorial 3', 't', 4, 10), item('t4', 'Tutorial 4', 't', 4, 10)],
+        items: [item('t1', 'Tutorial 1', 't', 4, 10, 4), item('t2', 'Tutorial 2', 't', 4, 10, 4), item('t3', 'Tutorial 3', 't', 4, 10), item('t4', 'Tutorial 4', 't', 4, 10),
+          // Brightspace really does have Assignment 1 outside any category.
+          item('a1', 'Assignment 1', 0, 20, 10)],
       },
       deadlines: [],
       news: [],

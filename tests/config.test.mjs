@@ -41,6 +41,6 @@ test('COMP 3000 grades count all 8 tutorials, not just the 4 Brightspace lists',
   assert.equal(tut.items.length, 8);
   assert.equal(r.components.find((c) => c.name === 'Assignments').items.length, 4);
   assert.equal(r.components.find((c) => c.name === 'Exams').items.length, 2);
-  assert.equal(r.totalW, 100);
+  assert.equal(r.totalW, 95); // lecture participation waits for a mark
   assert.equal(r.gradedW, 5); // 2 of 8 tutorials = a quarter of 20%
 });

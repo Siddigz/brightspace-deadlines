@@ -44,7 +44,7 @@ export const UNIVERSITY_DATES = [
 ];
 
 // Your own deadlines, outside any course. They show under "Personal" and can be ticked off.
-// `date` is local time; a bare date means 11:59 PM that day.
+// `date` is local time; a bare date means 11:59 PM that day. `end` makes it a time slot.
 export const PERSONAL_DEADLINES = [
   { title: 'Online assessment (timed)', date: '2026-10-14', kind: 'test' },
   { title: 'Club meeting', date: '2026-10-15T18:00', kind: 'event' },
@@ -61,12 +61,22 @@ export const DUE_OVERRIDES = {
   },
 };
 
+// Your own earlier deadlines: anything in `course` whose title matches `match` and is due on
+// weekday `from` (0 = Sun ... 5 = Fri) shows as due on the weekday `to` before it, at `time`.
+// The real closing time still shows on the row.
+export const MOVE_DEADLINES = [
+  // COMP 2406 tutorials close Friday 10:00 AM; finish them Thursday night instead.
+  { course: 'COMP 2406', match: '^Tutorial \\d+$', from: 5, to: 4, time: '23:59' },
+];
+
 // Deadlines that aren't in Brightspace (or have no date there). `date` is local time
 // ('2026-10-15T14:30'; a bare date means 11:59 PM). `end` makes it a time slot (a test sitting,
 // an exam window) rather than something you hand in, so it never shows as overdue.
 // An entry is skipped once Brightspace has an item with the same name, or one matching `unless`.
 // `gradedAs` marks it done once that many (`gradedCount`, default 1) Brightspace grade items
-// matching the pattern have a mark.
+// matching the pattern have a mark; add `dropWhenGraded` to remove it outright instead.
+// `notes` ([{ text, gradedAs }]) are appended to the title until their item is graded; once
+// every note is graded the entry is removed.
 export const EXTRA_DEADLINES = [
   // COMP 2406: in-person tests, Fridays 10:00-11:30 in the tutorial room.
   { course: 'COMP 2406', title: 'Test 1 (HTML + CSS), in person', date: '2026-09-25T10:00', end: '2026-09-25T11:30', kind: 'test' },
@@ -92,14 +102,14 @@ export const EXTRA_DEADLINES = [
     [5, '2026-11-10'], [6, '2026-11-17'], [7, '2026-11-24'], [8, '2026-12-01'],
   ].map(([n, day]) => ({
     course: 'COMP 3000', title: `Get Tutorial ${n} marked by a TA (last chance: B2 tutorial, 6:05 PM)`, date: day, kind: 'tutorial',
-    gradedAs: `^Tutorial ${n}$`,
+    gradedAs: `^Tutorial ${n}$`, dropWhenGraded: true,
     url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_${n}`,
   })),
   // Your plan: get each tutorial marked at the B2 session the day after it's released (Mondays),
   // a week before the real deadline above.
   ...[[4, '2026-10-06'], [5, '2026-11-03'], [6, '2026-11-10'], [7, '2026-11-17'], [8, '2026-11-24']].map(([n, day]) => ({
     course: 'COMP 3000', title: `Get Tutorial ${n} marked at B2 tutorial (your plan; a week early)`, date: `${day}T18:05`, kind: 'tutorial',
-    gradedAs: `^Tutorial ${n}$`,
+    gradedAs: `^Tutorial ${n}$`, dropWhenGraded: true,
     url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_${n}`,
   })),
   // Your B2 tutorial sessions (Tue 18:05-19:25, Carleton Central). None in fall break (Oct 27).
@@ -108,14 +118,13 @@ export const EXTRA_DEADLINES = [
   ...[
     ['2026-09-15'], ['2026-09-22', 1], ['2026-09-29', 2], ['2026-10-06', 3, 4], ['2026-10-13', 4], ['2026-10-20'],
     ['2026-11-03', null, 5], ['2026-11-10', 5, 6], ['2026-11-17', 6, 7], ['2026-11-24', 7, 8], ['2026-12-01', 8],
-  ].map(([day, due, plan]) => {
-    const notes = [plan && `get Tutorial ${plan} marked`, due && `last chance for Tutorial ${due}`].filter(Boolean);
-    return {
-      course: 'COMP 3000',
-      title: notes.length ? `B2 tutorial (${notes.join('; ')})` : 'B2 tutorial',
-      date: `${day}T18:05`, end: `${day}T19:25`, kind: 'tutorial',
-    };
-  }),
+  ].map(([day, due, plan]) => ({
+    course: 'COMP 3000', title: 'B2 tutorial', date: `${day}T18:05`, end: `${day}T19:25`, kind: 'tutorial',
+    notes: [
+      plan && { text: `get Tutorial ${plan} marked`, gradedAs: `^Tutorial ${plan}$` },
+      due && { text: `last chance for Tutorial ${due}`, gradedAs: `^Tutorial ${due}$` },
+    ].filter(Boolean),
+  })),
   // Section B: in class Wed Oct 21 (section A writes Tue Oct 20).
   { course: 'COMP 3000', title: 'Midterm, in class (closed book)', date: '2026-10-21T08:35', end: '2026-10-21T09:55', kind: 'test' },
   { course: 'COMP 3000', title: 'Final exam (date TBA)', date: '2026-12-12', end: '2026-12-23', kind: 'test', allDay: true },
@@ -185,6 +194,12 @@ export const OUTLINES = {
     rules: ['Midterm 1 33%, Midterm 2 33%, Final (take-home) 34%.'],
   },
   'CLCV 2105': {
+    // Brightspace already splits the gradebook: "Term 1: …" / "Term 2: …" categories plus the two exams.
+    terms: [
+      { name: 'Fall', match: ['^(Term 1|Fall)\\b'] },
+      { name: 'Winter', match: ['^(Term 2|Winter)\\b'] },
+    ],
+    termNote: 'Zoom discussion bonus marks run all year, so they only show under Full year.',
     rules: [
       'Full year. Quizzes 10%, mini-assignments 30%, participation 10%, Fall exam 25%, Winter exam 25%.',
       'Mini-assignments: submit at most 7 per term, best 6 count. No late submissions, ever.',
@@ -203,6 +218,11 @@ export const OUTLINES = {
       { name: 'December midterm', unless: '^MID-?TERM$' },
       { name: 'April final', unless: '^FINAL$' },
     ],
+    terms: [
+      { name: 'Fall', match: ['^(ANCIENT SOURCE|MID-?TERM|December midterm)$'] },
+      { name: 'Winter', match: ['^(MODERN BOOK|COURSE ESSAY|FINAL|April final)$'] },
+    ],
+    termNote: 'Best 4 of 5 is worked out over the whole year, so each term here is a plain average (25% per item, nothing dropped).',
     rules: [
       'Full year. Best 4 of 5 count, 25% each: Ancient Source, Modern Book, Course Essay, December midterm, April final.',
       'Papers: PDF only, Times New Roman 12 pt, double-spaced. Minimum 9 / 10 / 11 full pages of text.',
@@ -230,8 +250,9 @@ export const OUTLINES = {
       { name: 'Midterm', category: 'Exams', max: 100, unless: 'midterm' },
       { name: 'Final exam', category: 'Exams', max: 100, unless: '^final' },
     ],
-    itemWeights: { midterm: 20, '^final': 35 },
-    extra: [{ name: 'Lecture participation', weight: 5 }],
+    itemWeights: { midterm: 20, '^final': 35, '^lecture participation': 5 },
+    extra: [{ name: 'Lecture participation', weight: 5, unless: '^lecture participation' }],
+    onlyHelps: ['^lecture participation'],
     rules: [
       'Lecture participation 5%, tutorials 20%, assignments 20%, midterm 20%, final exam 35%.',
       'Tutorials are participation (4/4 for a real attempt), but a TA must mark them within 8 days of release.',

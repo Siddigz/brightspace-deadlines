@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Course Tracker options</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>Phone access</h1>
+      <p class="muted">Copies your deadlines, grades and ticks to a secret GitHub gist that the phone page reads.</p>
+    </div>
+  </header>
+
+  <main id="view">
+    <ol class="hint">
+      <li>Make a fine-grained token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">github.com/settings/personal-access-tokens/new</a>.
+        Under <b>Account permissions</b>, set <b>Gists</b> to <b>Read and write</b>. Nothing else is needed.</li>
+      <li>Paste it below and press Save. Leave the gist blank and one is made for you.</li>
+      <li>On your phone, open your phone page and enter the gist ID it shows here (and the token, if you want to tick things off from the phone).</li>
+    </ol>
+
+    <form class="form" id="phone-form">
+      <label style="flex:1 1 280px">GitHub token<input name="token" type="password" autocomplete="off" required></label>
+      <label style="flex:1 1 220px">Gist ID (optional)<input name="gist" autocomplete="off" placeholder="made for you if blank"></label>
+      <button class="btn primary" type="submit">Save</button>
+    </form>
+
+    <p id="status" class="hint"></p>
+    <p>
+      <button class="btn small" id="upload-btn" hidden>Upload now</button>
+      <button class="btn small" id="stop-btn" hidden>Stop sharing</button>
+    </p>
+  </main>
+
+  <script type="module" src="src/options.js"></script>
+</body>
+</html>

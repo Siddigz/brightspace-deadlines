@@ -1,7 +1,7 @@
 // Pulls everything the dashboard needs from Brightspace into one plain-JSON snapshot.
 // Only depends on a client with get / getAllObjects / getAllItems (see d2l.js).
 
-import { BASE, COURSE_ORDER, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES } from './config.js';
+import { BASE, COURSE_ORDER, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, MOVE_DEADLINES } from './config.js';
 import { LP, LE } from './d2l.js';
 
 const DAY = 86400000;
@@ -203,11 +203,20 @@ export function courseDeadlines(course) {
   const countMatching = (pattern, names) => names.filter((n) => new RegExp(pattern, 'i').test(n)).length;
   const syncedTitles = fromBrightspace.map((d) => d.title);
 
+  const graded = (pattern, count = 1) => countMatching(pattern, gradedNames) >= count;
   const extras = EXTRA_DEADLINES.filter((x) => x.course === code)
     .filter((x) => !synced.has(norm(x.title)))
     .filter((x) => !(x.unless && countMatching(x.unless, syncedTitles) > 0))
+    .filter((x) => !(x.dropWhenGraded && graded(x.gradedAs, x.gradedCount)))
+    .flatMap((x) => {
+      if (!x.notes?.length) return [{ ...x, fullTitle: x.title }];
+      // The id keeps every note, so it stays stable as notes drop off (and dates keep sessions apart).
+      const fullTitle = `${x.title} (${x.notes.map((n) => n.text).join('; ')}) ${x.date}`;
+      const open = x.notes.filter((n) => !graded(n.gradedAs));
+      return open.length ? [{ ...x, fullTitle, title: `${x.title} (${open.map((n) => n.text).join('; ')})` }] : [];
+    })
     .map((x) => ({
-      id: `cfg:${slug(code)}:${slug(x.title)}`,
+      id: `cfg:${slug(code)}:${slug(x.fullTitle)}`,
       course: code,
       title: x.title,
       kind: x.kind || 'other',
@@ -216,15 +225,26 @@ export function courseDeadlines(course) {
       end: x.end ? localDate(x.end) : null,
       slot: !!x.end,
       allDay: !!x.allDay,
-      autoDone: !!x.gradedAs && countMatching(x.gradedAs, gradedNames) >= (x.gradedCount || 1),
+      autoDone: !!x.gradedAs && graded(x.gradedAs, x.gradedCount),
       url: x.url || `${BASE}/d2l/home/${ou}`,
     }));
 
-  return [...fromBrightspace, ...extras].map((d) => {
+  return [...fromBrightspace, ...extras].map((d) => moveEarlier(d, code)).map((d) => {
     const rule = BONUS_DEADLINES.find((b) => b.course === code && new RegExp(b.match, 'i').test(d.title));
     const bonus = rule ? rule.note : d.bonus || /bonus/i.test(d.title) ? 'Bonus marks' : null;
     return bonus ? { ...d, bonus } : { ...d, bonus: undefined };
   });
+}
+
+// Applies MOVE_DEADLINES; the real due time is kept as `realDue`.
+function moveEarlier(d, code) {
+  if (!d.due || d.slot) return d;
+  const due = new Date(d.due);
+  const rule = MOVE_DEADLINES.find((m) => m.course === code && due.getDay() === m.from && new RegExp(m.match, 'i').test(d.title));
+  if (!rule) return d;
+  const [hh, mm] = rule.time.split(':').map(Number);
+  const moved = new Date(due.getFullYear(), due.getMonth(), due.getDate() - ((rule.from - rule.to + 7) % 7 || 7), hh, mm);
+  return { ...d, due: moved.toISOString(), realDue: d.due };
 }
 
 export async function syncAll(client, now = Date.now()) {

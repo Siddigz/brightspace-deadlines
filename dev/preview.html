@@ -36,7 +36,7 @@
         },
         onChanged: { addListener: (f) => listeners.push(f) },
       },
-      runtime: { async sendMessage() { data.snapshot = { ...data.snapshot, syncedAt: new Date().toISOString() }; } },
+      runtime: { async sendMessage(msg) { if (msg?.type === 'sync') data.snapshot = { ...data.snapshot, syncedAt: new Date().toISOString() }; } },
     };
     await import('../src/dashboard.js');
   </script>

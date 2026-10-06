@@ -4,13 +4,9 @@
 import { connect, AuthError } from './d2l.js';
 import { syncAll, localDate, courseDeadlines } from './sync.js';
 import { UNIVERSITY_DATES, PERSONAL_DEADLINES } from './config.js';
+import { DEFAULT_PREFS } from './prefs.js';
 
-export const DEFAULT_PREFS = {
-  done: {}, // deadline id -> true/false (overrides auto-detected state)
-  hidden: {}, // deadline id -> true
-  custom: [], // [{ id, course, title, due, allDay, kind }]
-  newsSeen: null, // announcement ids you've seen; null until the first sync with announcements
-};
+export { DEFAULT_PREFS, isDone } from './prefs.js';
 
 export async function load() {
   const { snapshot = null, prefs = {}, syncError = null } = await chrome.storage.local.get(['snapshot', 'prefs', 'syncError']);
@@ -41,12 +37,6 @@ export function runSync() {
   return inFlight;
 }
 
-// Deadline is done if the user said so, otherwise if Brightspace shows a submission/grade.
-export function isDone(d, prefs) {
-  const manual = prefs.done[d.id];
-  return manual ?? !!d.autoDone;
-}
-
 const universityDates = UNIVERSITY_DATES.map((x) => ({
   id: `uni:${x.date}:${x.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
   course: 'Carleton',
@@ -65,10 +55,12 @@ const personalDeadlines = PERSONAL_DEADLINES.map((x) => ({
   title: x.title,
   kind: x.kind || 'other',
   due: localDate(x.date),
-  end: null,
+  end: x.end ? localDate(x.end) : null,
+  slot: !!x.end,
   allDay: false,
   autoDone: false,
   url: x.url,
+  checklist: x.checklist,
 }));
 
 export function allDeadlines(snapshot, prefs) {

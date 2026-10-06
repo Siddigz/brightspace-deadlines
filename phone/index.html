@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Course Tracker</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Tracker">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <!-- Built by scripts/build-phone.mjs. Same dashboard as the extension; data comes from your secret gist. -->
+  <form id="setup" class="form" hidden>
+    <h1 style="flex-basis:100%">Course Tracker</h1>
+    <p class="hint" style="flex-basis:100%">Enter the gist ID from the extension's options page. Add your token too if you want to tick things off from here; without it the page is read-only.</p>
+    <label style="flex:1 1 100%">Gist ID or URL<input name="gist" required autocomplete="off"></label>
+    <label style="flex:1 1 100%">GitHub token (optional)<input name="token" type="password" autocomplete="off"></label>
+    <button class="btn primary" type="submit">Open</button>
+  </form>
+
+  <div id="app" hidden>
+    <header class="top">
+      <div class="brand">
+        <h1>Course Tracker</h1>
+        <p id="sync-status" class="muted">Loading…</p>
+      </div>
+      <button id="sync-btn" class="btn primary">Refresh</button>
+    </header>
+    <div id="banner" class="banner" hidden></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-view="deadlines" aria-selected="true">Deadlines</button>
+      <button role="tab" data-view="grades" aria-selected="false">Grades</button>
+      <button role="tab" data-view="news" aria-selected="false">Announcements<span id="news-badge" class="tab-badge" hidden></span></button>
+    </nav>
+    <div id="course-filter" class="chips"></div>
+    <main id="view"></main>
+    <p class="hint"><a href="#" id="forget">Change gist or token</a></p>
+  </div>
+
+  <script type="module" src="boot.js"></script>
+</body>
+</html>

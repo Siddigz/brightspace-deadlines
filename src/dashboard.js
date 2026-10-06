@@ -1,6 +1,6 @@
 import { COURSE_COLORS, CODE_LABELS, BASE, OUTLINES } from './config.js';
 import { load, savePrefs, isDone, allDeadlines } from './store.js';
-import { applyOutline, computeCourse, letter } from './grades.js';
+import { applyOutline, computeCourse, termSheet, letter } from './grades.js';
 
 const DAY = 86400000;
 const TARGETS = [90, 85, 80, 77, 73, 70];
@@ -16,6 +16,8 @@ const state = {
   showAll: false,
   bonusOnly: false,
   expanded: new Set(),
+  openChecklists: new Set(), // deadline ids whose checklist dropdown is open
+  terms: {}, // full-year course code -> 'Fall' | 'Winter' | 'Full year' (absent = the current term)
   freshNews: new Set(), // unseen when you opened Announcements; stay marked New until you leave the tab
 };
 
@@ -24,7 +26,7 @@ function remember() {
   try {
     localStorage.setItem('ui', JSON.stringify({
       view: state.view, hiddenCourses: [...state.hiddenCourses], showDone: state.showDone,
-      showAll: state.showAll, bonusOnly: state.bonusOnly,
+      showAll: state.showAll, bonusOnly: state.bonusOnly, terms: state.terms,
     }));
   } catch {}
 }
@@ -203,7 +205,8 @@ function renderDeadlines() {
     .filter((d) => !state.hiddenCourses.has(d.course) && !prefs.hidden[d.id])
     .map((d) => ({ ...d, t: Date.parse(d.due), done: isDone(d, prefs) }));
 
-  if (!state.showDone) items = items.filter((d) => !d.done);
+  // Checklist rows (NeetCode days) stay put when done or past; only × removes them.
+  if (!state.showDone) items = items.filter((d) => !d.done || d.checklist);
   if (state.bonusOnly) items = items.filter((d) => d.bonus);
 
   const overdue = [];
@@ -211,7 +214,12 @@ function renderDeadlines() {
   for (const d of items) {
     const over = isSlot(d) && d.end ? Date.parse(d.end) : d.t;
     const isPast = over < now && !(d.allDay && over >= today);
-    if (isPast && !state.showAll) {
+    if (isPast && !state.showAll && d.checklist) {
+      if (!d.done) {
+        overdue.push(d);
+        continue;
+      }
+    } else if (isPast && !state.showAll) {
       // Missed work from the last two weeks stays visible; past time slots just drop off.
       if (!isSlot(d) && !d.done && d.t > now - 14 * DAY) overdue.push(d);
       continue;
@@ -228,10 +236,19 @@ function renderDeadlines() {
     return `<div class="row ${d.done ? 'done' : ''}">
       <input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">
       <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
-      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}</span>
+      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
       <span class="when ${soon ? 'soon' : ''}" title="${esc(longFmt.format(new Date(d.t)))}">${esc(whenText(d))}${d.t > now ? ` · ${relative(d.t)}` : ''}</span>
       <button class="icon-btn" data-hide="${esc(d.id)}" title="Hide this item" aria-label="Hide">×</button>
     </div>`;
+  };
+
+  const checklist = (d) => {
+    if (!d.checklist) return '';
+    const solved = d.checklist.filter((x) => prefs.checked[x]).length;
+    return `<details class="checklist" data-checklist="${esc(d.id)}" ${state.openChecklists.has(d.id) ? 'open' : ''}>
+      <summary>${solved}/${d.checklist.length} solved</summary>
+      ${d.checklist.map((x) => `<label><input type="checkbox" data-check="${esc(x)}" ${prefs.checked[x] ? 'checked' : ''}> ${esc(x)}</label>`).join('')}
+    </details>`;
   };
 
   let html = `<div class="toolbar">
@@ -298,12 +315,17 @@ function componentRows(course, r) {
     return '<span class="muted">–</span>';
   };
 
+  // Components that can only raise the grade; `ignored` while counting them wouldn't help.
+  const helps = (c) => (c.onlyHelps
+    ? ` <span class="pill-helps" title="Can only raise your grade">only helps</span>${c.ignored ? ' <span class="muted" title="Your grade is better without it right now, or it has no mark yet">· not counted</span>' : ''}`
+    : '');
+
   let html = '';
   for (const c of r.components) {
     if (c.single) {
       const it = c.items[0];
       html += `<tr class="comp">
-        <td>${esc(it.name)}${c.bonus ? ' <span class="pill-bonus">bonus</span>' : ''}</td>
+        <td>${esc(it.name)}${c.bonus ? ' <span class="pill-bonus">bonus</span>' : ''}${helps(c)}</td>
         <td class="r num">${weightCell(c.W)}</td>
         <td class="r num">${scoreCell(it, false)}</td>
         <td class="r">${it.extra ? '<span class="muted" title="From the course outline; not in Brightspace yet">outline</span>' : ''}</td>
@@ -315,7 +337,7 @@ function componentRows(course, r) {
     const graded = c.items.filter((it) => it.actual != null).length;
     html += `<tr class="comp">
       <td>${c.items.length ? `<button class="icon-btn" data-expand="${esc(key)}" aria-expanded="${open}">${open ? '▾' : '▸'}</button>` : ''}${esc(c.name)}
-        <span class="muted"> · ${graded}/${c.items.length} graded${c.drop ? `, lowest ${c.drop} dropped` : ''}</span>${c.bonus ? ' <span class="pill-bonus">bonus</span>' : ''}</td>
+        <span class="muted"> · ${graded}/${c.items.length} graded${c.drop ? `, lowest ${c.drop} dropped` : ''}</span>${c.bonus ? ' <span class="pill-bonus">bonus</span>' : ''}${helps(c)}</td>
       <td class="r num">${weightCell(c.W)}</td>
       <td class="r num">${c.pct == null ? '–' : `<b>${fmt1(c.pct)}%</b>`}</td>
       <td></td>
@@ -325,7 +347,7 @@ function componentRows(course, r) {
         const dropped = c.dropped.includes(it.id);
         html += `<tr class="item ${dropped ? 'dropped' : ''}">
           <td>${esc(it.name)}</td>
-          <td class="r num muted">${it.w ? fmt1(it.w) : ''}</td>
+          <td class="r num muted">${it.share ? `${fmt1(it.share)}%` : ''}</td>
           <td class="r num">${scoreCell(it, dropped)}</td>
           <td></td>
         </tr>`;
@@ -336,6 +358,9 @@ function componentRows(course, r) {
 }
 
 
+// Winter runs January to April; the rest of the school year is Fall.
+const currentTerm = () => (new Date().getMonth() < 4 ? 'Winter' : 'Fall');
+
 function renderGrades() {
   const list = courses().filter((c) => !state.hiddenCourses.has(c.code));
   if (!list.length) return `<div class="empty">Press Sync now to pull your grades from Brightspace.</div>`;
@@ -344,25 +369,38 @@ function renderGrades() {
 
   for (const c of list) {
     const outline = OUTLINES[c.code];
-    const r = computeCourse(applyOutline(c.grades, outline));
+    const sheet = applyOutline(c.grades, outline);
+    const terms = outline?.terms || [];
+    const picked = state.terms[c.code] ?? currentTerm();
+    const term = terms.some((t) => t.name === picked) ? picked : null;
+    const part = term ? termSheet(sheet, outline, term) : null;
+    // A term counts out of 100 on its own; termShare is what it's worth of the final grade.
+    const r = part ? computeCourse(part, { scaleTo: 100 }) : computeCourse(sheet);
+    const termShare = part ? computeCourse(part).totalW : null;
     const noWeights = r.totalW === 0;
+    const termSwitch = terms.length
+      ? `<div class="seg" role="group" aria-label="Show term">${[null, ...terms.map((t) => t.name)].map((t) =>
+        `<button data-term="${esc(c.code)}" data-term-name="${esc(t || '')}" aria-pressed="${t === term}">${esc(t || 'Full year')}</button>`).join('')}</div>`
+      : '';
     html += `<article class="card" style="--c:${color(c.code)}">
       <div class="card-head">
         <div>
           <h2><span class="tag" style="--c:${color(c.code)}">${esc(label(c.code))}</span> ${esc(c.title)}</h2>
           <div class="sub"><a href="${esc(c.links.grades)}" target="_blank">Brightspace grades</a> · <a href="${esc(c.links.content)}" target="_blank">Content</a></div>
+          ${termSwitch}
         </div>
         <div class="score">
           <span class="big num">${r.current == null ? '–' : fmt1(r.current) + '%'}</span><span class="letter">${letter(r.current)}</span>
-          <div class="sub">current average</div>
+          <div class="sub">${term ? `${esc(term)} average` : 'current average'}</div>
         </div>
       </div>
       <div class="bar"><span style="width:${Math.min(100, r.coverage * 100)}%"></span></div>
       <div class="stats">
-        <span><b class="num">${fmt1(r.coverage * 100)}%</b> of the course graded</span>
+        <span><b class="num">${fmt1(r.coverage * 100)}%</b> of the ${term ? 'term' : 'course'} graded</span>
+        ${term ? `<span>${esc(term)} is worth <b class="num">${fmt1(termShare)}%</b> of your final grade</span>` : ''}
         ${r.floor != null ? `<span>Banked: <b class="num">${fmt1(r.floor)}%</b></span>` : ''}
         ${r.bonusW ? `<span>Bonus: <b class="num">+${fmt1(r.bonusW)}</b></span>` : ''}
-        ${r.totalW && Math.abs(r.totalW - 100) > 0.5 ? `<span>Weights add up to <b class="num">${fmt1(r.totalW)}</b>, not 100</span>` : ''}
+        ${!term && r.totalW && Math.abs(r.totalW + r.ignoredW - 100) > 0.5 ? `<span>Weights add up to <b class="num">${fmt1(r.totalW + r.ignoredW)}</b>, not 100</span>` : ''}
       </div>
       ${neededChips(r)}
       ${noWeights ? `<p class="hint">No grading scheme for this course yet. Add it to OUTLINES in src/config.js.</p>` : ''}
@@ -431,6 +469,10 @@ view.addEventListener('click', (e) => {
     });
   } else if (t.dataset.action === 'unhide') {
     updatePrefs((p) => { p.hidden = {}; });
+  } else if (t.dataset.term) {
+    state.terms[t.dataset.term] = t.dataset.termName || 'Full year';
+    remember();
+    render();
   } else if (t.dataset.expand) {
     const k = t.dataset.expand;
     state.expanded.has(k) ? state.expanded.delete(k) : state.expanded.add(k);
@@ -444,9 +486,24 @@ view.addEventListener('change', (e) => {
     const id = t.dataset.done;
     const d = allDeadlines(state.snapshot, state.prefs).find((x) => x.id === id);
     updatePrefs((p) => {
+      // A checklist's own box ticks (or clears) every item on it.
+      if (d?.checklist) {
+        for (const x of d.checklist) {
+          if (t.checked) p.checked[x] = true;
+          else delete p.checked[x];
+        }
+        delete p.done[id];
+        return;
+      }
       // Only store an override when it differs from what Brightspace says.
       if (t.checked === !!d?.autoDone) delete p.done[id];
       else p.done[id] = t.checked;
+    });
+  } else if (t.dataset.check) {
+    const x = t.dataset.check;
+    updatePrefs((p) => {
+      if (t.checked) p.checked[x] = true;
+      else delete p.checked[x];
     });
   } else if (t.dataset.opt) {
     state[t.dataset.opt] = t.checked;
@@ -454,6 +511,13 @@ view.addEventListener('change', (e) => {
     render();
   }
 });
+
+// Keep checklist dropdowns open across re-renders (toggle doesn't bubble, so capture it).
+view.addEventListener('toggle', (e) => {
+  const id = e.target.dataset?.checklist;
+  if (!id) return;
+  e.target.open ? state.openChecklists.add(id) : state.openChecklists.delete(id);
+}, true);
 
 view.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -488,5 +552,6 @@ chrome.storage.onChanged.addListener(async () => {
 recall();
 Object.assign(state, await load());
 render();
+chrome.runtime.sendMessage({ type: 'pull' });
 const stale = !state.snapshot || Date.now() - Date.parse(state.snapshot.syncedAt) > 10 * 60e3;
 if (stale) sync();

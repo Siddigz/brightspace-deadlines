@@ -10,6 +10,7 @@
     "service_worker": "src/background.js",
     "type": "module"
   },
+  "options_page": "options.html",
   "permissions": ["storage", "alarms", "scripting", "tabs"],
-  "host_permissions": ["https://brightspace.carleton.ca/*"]
+  "host_permissions": ["https://brightspace.carleton.ca/*", "https://api.github.com/*", "https://gist.githubusercontent.com/*"]
 }

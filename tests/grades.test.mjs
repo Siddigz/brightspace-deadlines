@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyOutline, computeCourse, letter } from '../src/grades.js';
+import { applyOutline, computeCourse, termSheet, letter } from '../src/grades.js';
 import { OUTLINES } from '../src/config.js';
 
 const close = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -147,9 +147,101 @@ test('COMP 3000 outline weights a points-based gradebook', () => {
     ],
   }, OUTLINES['COMP 3000']);
   const r = computeCourse(sheet);
-  close(r.totalW, 100); // 20 + 20 + 55 + 5 lecture participation
+  close(r.totalW, 95); // 20 + 20 + 55; lecture participation (5) waits for a mark
   close(r.gradedW, 5); // 2 of the 8 tutorials the outline expects
   close(r.current, 100);
+});
+
+test('COMP 3000: an assignment Brightspace left uncategorized still shares the 20% assignment weight', () => {
+  const sheet = applyOutline({
+    system: 'Points',
+    categories: [
+      { id: 't', name: 'Tutorials', weight: null, drop: 0 },
+      { id: 'a', name: 'Assignments', weight: null, drop: 0 },
+      { id: 'e', name: 'Exams', weight: null, drop: 0 },
+    ],
+    items: [{ id: 'a1', name: 'Assignment 1', categoryId: 0, max: 20, weight: 10, points: 15, outOf: 20 }],
+  }, OUTLINES['COMP 3000']);
+  const r = computeCourse(sheet);
+  const assignments = r.components.find((c) => c.name === 'Assignments');
+  assert.equal(assignments.items.length, 4);
+  assert.ok(!r.components.some((c) => c.single && c.name === 'Assignment 1'));
+  close(r.totalW, 95); // lecture participation waits for a mark
+  close(r.gradedW, 5); // 1 of 4 assignments = a quarter of 20%
+  close(r.current, 75);
+});
+
+test('each item shows its share of the course, not its point value', () => {
+  const sheet = applyOutline({
+    system: 'Points',
+    categories: [
+      { id: 't', name: 'Tutorials', weight: null, drop: 0 },
+      { id: 'a', name: 'Assignments', weight: null, drop: 0 },
+      { id: 'e', name: 'Exams', weight: null, drop: 0 },
+    ],
+    items: [],
+  }, OUTLINES['COMP 3000']);
+  const r = computeCourse(sheet);
+  const share = (cat) => r.components.find((c) => c.name === cat).items.map((it) => it.share);
+  assert.deepEqual(share('Assignments'), [5, 5, 5, 5]); // 20% over 4, not 20 points each
+  assert.deepEqual(share('Tutorials'), Array(8).fill(2.5));
+  assert.deepEqual(share('Exams'), [20, 35]);
+  // Best 4 of 5 tests at 40%: each one that counts is worth 10%.
+  const tests = computeCourse(comp2406()).components.find((c) => c.name === 'Tests');
+  tests.items.forEach((it) => close(it.share, 10));
+});
+
+test('CLCV 2105 terms follow the Term 1 / Term 2 categories and the two exams', () => {
+  const sheet = applyOutline({
+    system: 'Weighted',
+    categories: [
+      { id: 'q1', name: 'Term 1: Quizzes', weight: 5, drop: 0 },
+      { id: 'fe', name: 'Fall Exam', weight: 25, drop: 0 },
+      { id: 'q2', name: 'Term 2: Quizzes', weight: 5, drop: 0 },
+      { id: 'we', name: 'Winter Exam', weight: 25, drop: 0 },
+      { id: 'bn', name: 'Bonus Marks: Discussion Participation', weight: 3, drop: 0 },
+    ],
+    items: [
+      { id: 'a', name: 'Lesson 1: Quiz 1', categoryId: 'q1', max: 100, weight: 1, points: 80, outOf: 100 },
+      { id: 'b', name: 'Fall Exam', categoryId: 'fe', max: 100, weight: 100, points: null, outOf: null },
+      { id: 'c', name: 'Lesson 13: Quiz 1', categoryId: 'q2', max: 100, weight: 1, points: 50, outOf: 100 },
+      { id: 'd', name: 'Winter Exam', categoryId: 'we', max: 100, weight: 100, points: null, outOf: null },
+      { id: 'e', name: 'Bonus Marks for Live Group Discussion 1', categoryId: 'bn', max: 0.5, weight: 1, points: 0.5, outOf: 0.5 },
+    ],
+  }, OUTLINES['CLCV 2105']);
+  const fall = computeCourse(termSheet(sheet, OUTLINES['CLCV 2105'], 'Fall'));
+  close(fall.totalW, 30);
+  close(fall.current, 80);
+  assert.deepEqual(fall.components.map((c) => c.name), ['Term 1: Quizzes', 'Fall Exam']);
+  const winter = computeCourse(termSheet(sheet, OUTLINES['CLCV 2105'], 'Winter'));
+  close(winter.totalW, 30);
+  close(winter.current, 50);
+
+  // Shown on its own, a term counts out of 100: 5 and 25 become 16.7 and 83.3, the average is unchanged.
+  const scaled = computeCourse(termSheet(sheet, OUTLINES['CLCV 2105'], 'Fall'), { scaleTo: 100 });
+  close(scaled.totalW, 100);
+  close(scaled.components[0].W, 100 / 6);
+  close(scaled.current, 80);
+  close(scaled.floor, 80 / 6); // 80% on a sixth of the term
+});
+
+test('CLCV 2305 terms: plain average of that term\'s items, best-4-of-5 not applied', () => {
+  const sheet = applyOutline({
+    system: 'Weighted',
+    categories: [],
+    items: ['ANCIENT SOURCE', 'MODERN BOOK', 'COURSE ESSAY'].map((name, i) => ({
+      id: `p${i}`, name, categoryId: null, max: 25, weight: 10, points: [20, 15, null][i], outOf: 25,
+    })),
+  }, OUTLINES['CLCV 2305']);
+  const fall = computeCourse(termSheet(sheet, OUTLINES['CLCV 2305'], 'Fall'));
+  assert.deepEqual(fall.components[0].items.map((it) => it.name).sort(), ['ANCIENT SOURCE', 'December midterm']);
+  close(fall.totalW, 50);
+  close(fall.current, 80);
+  const winter = computeCourse(termSheet(sheet, OUTLINES['CLCV 2305'], 'Winter'));
+  assert.equal(winter.components[0].items.length, 3);
+  assert.equal(winter.components[0].drop, 0);
+  close(winter.totalW, 75);
+  close(winter.current, 60);
 });
 
 test('letters follow Carleton cutoffs', () => {
@@ -157,4 +249,43 @@ test('letters follow Carleton cutoffs', () => {
   assert.equal(letter(84.9), 'A-');
   assert.equal(letter(49), 'F');
   assert.equal(letter(null), '–');
+});
+
+// COMP 3000 gradebook with the given tutorial marks (out of 4) and lecture participation (out of 100).
+const comp3000 = (tutorials, participation) => applyOutline({
+  system: 'Points',
+  categories: [
+    { id: 't', name: 'Tutorials', weight: null, drop: 0 },
+    { id: 'a', name: 'Assignments', weight: null, drop: 0 },
+    { id: 'e', name: 'Exams', weight: null, drop: 0 },
+  ],
+  items: [
+    ...tutorials.map((p, i) => ({ id: `t${i + 1}`, name: `Tutorial ${i + 1}`, categoryId: 't', max: 4, points: p, outOf: 4 })),
+    ...(participation == null ? [] : [{ id: 'lp', name: 'Lecture Participation', categoryId: null, max: 100, points: participation, outOf: 100 }]),
+  ],
+}, OUTLINES['COMP 3000']);
+
+test('COMP 3000 lecture participation is left out until it has a mark', () => {
+  const r = computeCourse(comp3000([4, 2]));
+  close(r.totalW, 95); // scored out of the other 95%
+  close(r.current, 75);
+  close(r.floor, (3.75 / 95) * 100);
+  close(r.needed(80), ((0.8 * 95 - 3.75) / 90) * 100);
+  const lp = r.components.find((c) => c.name === 'Lecture participation');
+  assert.ok(lp.onlyHelps && lp.ignored);
+});
+
+test('COMP 3000 lecture participation counts when it raises the grade', () => {
+  const r = computeCourse(comp3000([4, 2], 100));
+  close(r.totalW, 100);
+  close(r.current, (3.75 + 5) / 10 * 100);
+  assert.ok(!r.components.find((c) => c.onlyHelps).ignored);
+  assert.equal(r.components.filter((c) => /lecture participation/i.test(c.name)).length, 1); // Brightspace item replaces the outline one
+});
+
+test('COMP 3000 lecture participation is dropped when it would lower the grade', () => {
+  const r = computeCourse(comp3000([4, 2], 40));
+  close(r.totalW, 95);
+  close(r.current, 75);
+  assert.ok(r.components.find((c) => c.onlyHelps).ignored);
 });
