@@ -205,8 +205,7 @@ function renderDeadlines() {
     .filter((d) => !state.hiddenCourses.has(d.course) && !prefs.hidden[d.id])
     .map((d) => ({ ...d, t: Date.parse(d.due), done: isDone(d, prefs) }));
 
-  // Checklist rows (NeetCode days) stay put when done or past; only × removes them.
-  if (!state.showDone) items = items.filter((d) => !d.done || d.checklist);
+  if (!state.showDone) items = items.filter((d) => !d.done);
   if (state.bonusOnly) items = items.filter((d) => d.bonus);
 
   const overdue = [];
@@ -214,12 +213,12 @@ function renderDeadlines() {
   for (const d of items) {
     const over = isSlot(d) && d.end ? Date.parse(d.end) : d.t;
     const isPast = over < now && !(d.allDay && over >= today);
-    if (isPast && !state.showAll && d.checklist) {
-      if (!d.done) {
-        overdue.push(d);
-        continue;
-      }
-    } else if (isPast && !state.showAll) {
+    // Unfinished checklists (NeetCode days) stay overdue until done or hidden with ×.
+    if (isPast && !state.showAll && d.checklist && !d.done) {
+      overdue.push(d);
+      continue;
+    }
+    if (isPast && !state.showAll) {
       // Missed work from the last two weeks stays visible; past time slots just drop off.
       if (!isSlot(d) && !d.done && d.t > now - 14 * DAY) overdue.push(d);
       continue;
