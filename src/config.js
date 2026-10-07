@@ -163,16 +163,6 @@ export const EXTRA_DEADLINES = [
   { course: 'COMP 3000', title: 'Midterm, in class (closed book)', date: '2026-10-21T08:35', end: '2026-10-21T09:55', kind: 'test' },
   { course: 'COMP 3000', title: 'Final exam (date TBA)', date: '2026-12-12', end: '2026-12-23', kind: 'test', allDay: true },
 
-  // COMP 3000 section B lectures (Wed/Fri 08:35-09:55), from the course site's schedule.
-  // No class Sep 30 or Oct 1 (NSPW).
-  ...[
-    ['2026-10-02', 'Lecture 6'], ['2026-10-07', 'Lecture 7'], ['2026-10-09', 'Lecture 8'], ['2026-10-14', 'Lecture 9'],
-    ['2026-10-16', 'Midterm review'], ['2026-10-23', 'Lecture 11'], ['2026-11-04', 'Lecture 12'], ['2026-11-06', 'Lecture 13'],
-    ['2026-11-11', 'Lecture 14'], ['2026-11-13', 'Lecture 15'], ['2026-11-18', 'Lecture 16'], ['2026-11-20', 'Lecture 17'],
-    ['2026-11-25', 'Lecture 18'], ['2026-11-27', 'Lecture 19'], ['2026-12-02', 'Lecture 20'], ['2026-12-04', 'Lecture 21'],
-    ['2026-12-09', 'Lecture 22'],
-  ].map(([day, title]) => ({ course: 'COMP 3000', title, date: `${day}T08:35`, end: `${day}T09:55`, kind: 'lecture' })),
-
   // CLCV 2105: each lesson's two quizzes (no dates in Brightspace) and its mini-assignment (Brightspace
   // only creates the submission folder when the lesson opens), due Sunday 11:59 PM per the outline.
   ...[
@@ -204,7 +194,6 @@ export const EXTRA_DEADLINES = [
 export const BONUS_DEADLINES = [
   { course: 'CLCV 2105', match: 'Zoom Discussion', note: '+0.5% final grade if you participate (claim it with the bonus quiz afterwards), max 3%' },
   { course: 'CLCV 2105', match: 'bonus', note: 'Claim your Zoom discussion bonus (+0.5%)' },
-  { course: 'COMP 3000', match: '^(Lecture|Midterm review)', note: 'Lecture participation (5%) can only raise your grade: ask questions, answer the polls' },
 ];
 
 // Grading rules from each outline, applied on top of the Brightspace gradebook.
