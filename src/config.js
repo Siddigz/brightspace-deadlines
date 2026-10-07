@@ -43,9 +43,11 @@ export const UNIVERSITY_DATES = [
   { title: 'Winter exam period', date: '2027-04-11', end: '2027-04-23' },
 ];
 
-// All 117 NeetCode problems, in category order. Day 1 (Mon Oct 5) was 5 problems; from Tue Oct 6
-// it's 2 a day, finishing Mon Nov 30. Trees are done by Oct 23, graphs by Nov 3.
+// All 117 NeetCode problems, in category order, one day after another from Mon Oct 5.
+// NEETCODE_PACE is [first day, problems per day] from then on: 5 on Oct 5, 2 a day Oct 6-7,
+// then 3 a day from Thu Oct 8, finishing Thu Nov 12. Trees are done by Oct 18, graphs by Oct 25.
 // Miss a day? Shift everything back rather than doubling up.
+const NEETCODE_PACE = [['2026-10-05', 5], ['2026-10-06', 2], ['2026-10-08', 3]];
 const NEETCODE = [
     'Contains Duplicate, Valid Anagram, Two Sum, Group Anagrams, Top K Frequent Elements',
     'Encode and Decode Strings, Product of Array Except Self, Valid Sudoku, Longest Consecutive Sequence, Valid Palindrome',
@@ -72,10 +74,12 @@ const NEETCODE = [
     'Coin Change II, Target Sum, Interleaving String, Edit Distance, Rotate Image',
     'Spiral Matrix, Set Matrix Zeroes',
 ].join(', ').split(', ');
-const NEETCODE_DAYS = [
-  NEETCODE.slice(0, 5),
-  ...Array.from({ length: Math.ceil((NEETCODE.length - 5) / 2) }, (_, i) => NEETCODE.slice(5 + 2 * i, 7 + 2 * i)),
-];
+const NEETCODE_DAYS = [];
+for (let i = 0, d = new Date(2026, 9, 5); i < NEETCODE.length; d.setDate(d.getDate() + 1)) {
+  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const [, perDay] = NEETCODE_PACE.findLast(([from]) => from <= date);
+  NEETCODE_DAYS.push({ date, checklist: NEETCODE.slice(i, (i += perDay)) });
+}
 
 // Your own deadlines, outside any course. They show under "Personal" and can be ticked off.
 // `date` is local time; a bare date means 11:59 PM that day. `end` makes it a time slot.
