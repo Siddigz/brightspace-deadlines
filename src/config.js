@@ -99,36 +99,6 @@ export const EXTRA_DEADLINES = [
     course: 'COMP 3000', title: `Assignment ${n}`, date, kind: 'assignment', gradedAs: `^Assignment ${n}\\b`,
     url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Assignment_${n}`,
   })),
-  // Tutorials must be TA-marked within 8 days of release. Every deadline falls on a Tuesday,
-  // the same day as your B2 tutorial (Tue 18:05-19:25), so that session is the last chance.
-  ...[
-    [1, '2026-09-22'], [2, '2026-09-29'], [3, '2026-10-06'], [4, '2026-10-13'],
-    [5, '2026-11-10'], [6, '2026-11-17'], [7, '2026-11-24'], [8, '2026-12-01'],
-  ].map(([n, day]) => ({
-    course: 'COMP 3000', title: `Get Tutorial ${n} marked by a TA (last chance: B2 tutorial, 6:05 PM)`, date: day, kind: 'tutorial',
-    gradedAs: `^Tutorial ${n}$`, dropWhenGraded: true, group: `tutorial-${n}`,
-    url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_${n}`,
-  })),
-  // Your plan: get each tutorial marked at the B2 session the day after it's released (Mondays),
-  // a week before the real deadline above.
-  ...[[4, '2026-10-06'], [5, '2026-11-03'], [6, '2026-11-10'], [7, '2026-11-17'], [8, '2026-11-24']].map(([n, day]) => ({
-    course: 'COMP 3000', title: `Get Tutorial ${n} marked at B2 tutorial (your plan; a week early)`, date: `${day}T18:05`, kind: 'tutorial',
-    gradedAs: `^Tutorial ${n}$`, dropWhenGraded: true, group: `tutorial-${n}`,
-    url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_${n}`,
-  })),
-  // Your B2 tutorial sessions (Tue 18:05-19:25, Carleton Central). None in fall break (Oct 27).
-  // Dec 1 isn't on the course site but it's the Tutorial 8 sign-off deadline, so it's included.
-  // [day, last chance for tutorial, planned tutorial]
-  ...[
-    ['2026-09-15'], ['2026-09-22', 1], ['2026-09-29', 2], ['2026-10-06', 3, 4], ['2026-10-13', 4], ['2026-10-20'],
-    ['2026-11-03', null, 5], ['2026-11-10', 5, 6], ['2026-11-17', 6, 7], ['2026-11-24', 7, 8], ['2026-12-01', 8],
-  ].map(([day, due, plan]) => ({
-    course: 'COMP 3000', title: 'B2 tutorial', date: `${day}T18:05`, end: `${day}T19:25`, kind: 'tutorial',
-    notes: [
-      plan && { text: `get Tutorial ${plan} marked`, gradedAs: `^Tutorial ${plan}$`, group: `tutorial-${plan}` },
-      due && { text: `last chance for Tutorial ${due}`, gradedAs: `^Tutorial ${due}$`, group: `tutorial-${due}` },
-    ].filter(Boolean),
-  })),
   // Section B: in class Wed Oct 21 (section A writes Tue Oct 20).
   { course: 'COMP 3000', title: 'Midterm, in class (closed book)', date: '2026-10-21T08:35', end: '2026-10-21T09:55', kind: 'test' },
   { course: 'COMP 3000', title: 'Final exam (room TBA)', date: '2026-12-17T09:00', end: '2026-12-17T11:30', kind: 'test' },
