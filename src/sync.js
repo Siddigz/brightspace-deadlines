@@ -288,7 +288,8 @@ export function courseDeadlines(course) {
 
   return [...fromBrightspace, ...extras, ...tutorials].map((d) => moveEarlier(d, code)).map((d) => {
     if (!d.autoDone && hasMark(d.title)) d = { ...d, autoDone: true };
-    if (d.live && ONE_AT_A_TIME.includes(code)) d = { ...d, oneAtATime: true };
+    // Hand-in work only: a quiz or exam neither waits its turn nor holds the next paper back.
+    if (d.live && d.kind === 'assignment' && ONE_AT_A_TIME.includes(code)) d = { ...d, oneAtATime: true };
     const rule = BONUS_DEADLINES.find((b) => b.course === code && new RegExp(b.match, 'i').test(d.title));
     const bonus = rule ? rule.note : d.bonus || /bonus/i.test(d.title) ? 'Bonus marks' : null;
     return bonus ? { ...d, bonus } : { ...d, bonus: undefined };

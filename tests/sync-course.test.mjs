@@ -85,7 +85,11 @@ test('a mark in the gradebook ticks any deadline named after that grade item', (
 
 test('CLCV 2305 Brightspace items are marked one-at-a-time; other courses are not', () => {
   const due = new Date(2026, 10, 2, 23, 59).toISOString();
-  const rows = (code) => courseDeadlines({ code, ou: 5, deadlines: [{ id: '5:drop:1', title: 'ANCIENT SOURCE', kind: 'assignment', due }] });
+  const rows = (code) => courseDeadlines({ code, ou: 5, deadlines: [
+    { id: '5:drop:1', title: 'ANCIENT SOURCE', kind: 'assignment', due },
+    { id: '5:quiz:2', title: 'MID-TERM', kind: 'test', due: new Date(2026, 11, 23, 17).toISOString() },
+  ] });
   assert.equal(rows('CLCV 2305').find((d) => d.title === 'ANCIENT SOURCE').oneAtATime, true);
+  assert.equal(rows('CLCV 2305').find((d) => d.title === 'MID-TERM').oneAtATime, undefined); // exams don't queue
   assert.equal(rows('CLCV 2105').find((d) => d.title === 'ANCIENT SOURCE').oneAtATime, undefined);
 });

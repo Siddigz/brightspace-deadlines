@@ -145,8 +145,9 @@ export const EXTRA_DEADLINES = [
   { course: 'CLCV 2105', title: 'Winter exam, CoMaS proctored (date TBA)', date: '2027-04-11', end: '2027-04-23', kind: 'test', allDay: true },
 ];
 
-// Courses whose work you do one piece at a time: "Open now" shows only the next one due, and
-// the one after it appears once that deadline has passed (even if it's open in Brightspace).
+// Courses whose papers you write one at a time: "Open now" shows only the next assignment due,
+// and the one after it appears once that deadline has passed (even if it's open in Brightspace).
+// Quizzes and exams aren't part of the queue.
 export const ONE_AT_A_TIME = ['CLCV 2305'];
 
 // Deadlines that carry bonus marks get a "bonus" tag with this note. `match` is tested
