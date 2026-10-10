@@ -12,10 +12,23 @@ export const DEFAULT_PREFS = {
 // Deadline is done if the user said so, otherwise if Brightspace shows a submission/grade,
 // or (for a checklist) once every item on it is ticked.
 export function isDone(d, prefs) {
-  const manual = prefs.done[d.id];
+  const manual = prefs.done[d.id] ?? (d.group ? prefs.done[d.group] : undefined);
   if (manual != null) return manual;
   if (d.checklist) return d.checklist.every((x) => prefs.checked?.[x]);
   return !!d.autoDone;
+}
+
+// Deadlines sharing a `group` (e.g. every date for one tutorial) are ticked together, under the
+// group's id. Session rows carry `notes` tied to groups: a note goes once its group is ticked,
+// and the row goes with its last note.
+export function applyGroups(deadlines, prefs) {
+  const done = prefs.done || {};
+  return deadlines.flatMap((d) => {
+    if (!d.notes) return [d];
+    const open = d.notes.filter((n) => !(n.group && done[n.group]));
+    if (!open.length) return [];
+    return [{ ...d, title: `${d.baseTitle} (${open.map((n) => n.text).join('; ')})` }];
+  });
 }
 
 // Three-way merge of the laptop's and the phone's prefs. `base` is the copy both last agreed on:

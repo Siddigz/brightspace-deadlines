@@ -107,3 +107,28 @@ test('COMP 2406 tutorials due Friday 10:00 show as due Thursday 11:59 PM', () =>
   const t4 = list.find((d) => d.title === 'Tutorial 4'); // from config, also Friday 10:00
   assert.equal(new Date(t4.due).toString(), new Date(2026, 9, 8, 23, 59).toString());
 });
+
+test('a mark in the grade sheet removes tutorial rows even without the synced gradedNames list', () => {
+  const course = {
+    code: 'COMP 3000', ou: 3, deadlines: [],
+    grades: { items: [{ id: 't4', name: 'Tutorial 4', points: 4, outOf: 4 }, { id: 't5', name: 'Tutorial 5', points: null }] },
+  };
+  const titles = courseDeadlines(course).map((d) => d.title);
+  assert.equal(titles.some((t) => /Tutorial 4\b/.test(t)), false);
+  assert.equal(titles.some((t) => /^Get Tutorial 5 marked/.test(t)), true);
+});
+
+test('ticking one COMP 3000 tutorial row ticks every date for that tutorial', async () => {
+  const { applyGroups, isDone } = await import('../src/prefs.js');
+  const all = courseDeadlines({ code: 'COMP 3000', ou: 3, deadlines: [] });
+  const t4 = all.filter((d) => /^Get Tutorial 4 marked/.test(d.title));
+  assert.equal(t4.length, 2);
+  assert.equal(t4[0].group, t4[1].group);
+  const prefs = { done: { [t4[0].group]: true }, checked: {} };
+  assert.equal(t4.every((d) => isDone(d, prefs)), true);
+  assert.equal(isDone(all.find((d) => /^Get Tutorial 5 marked/.test(d.title)), prefs), false);
+  const shown = applyGroups(all, prefs).filter((d) => d.title.startsWith('B2 tutorial'));
+  assert.equal(shown.some((d) => /Tutorial 4/.test(d.title)), false); // notes gone, Oct 13 session gone with it
+  assert.equal(shown.some((d) => d.title === 'B2 tutorial (last chance for Tutorial 3)'), true); // Oct 6 keeps its other note
+  assert.equal(applyGroups(all, { done: {} }).filter((d) => /B2 tutorial.*Tutorial 4/.test(d.title)).length, 2);
+});

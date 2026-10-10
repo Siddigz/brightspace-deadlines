@@ -4,7 +4,7 @@
 import { connect, AuthError } from './d2l.js';
 import { syncAll, localDate, courseDeadlines } from './sync.js';
 import { UNIVERSITY_DATES, PERSONAL_DEADLINES } from './config.js';
-import { DEFAULT_PREFS } from './prefs.js';
+import { DEFAULT_PREFS, applyGroups } from './prefs.js';
 
 export { DEFAULT_PREFS, isDone } from './prefs.js';
 
@@ -66,5 +66,5 @@ const personalDeadlines = PERSONAL_DEADLINES.map((x) => ({
 
 export function allDeadlines(snapshot, prefs) {
   const fromSync = (snapshot?.courses || []).flatMap(courseDeadlines);
-  return [...fromSync, ...universityDates, ...personalDeadlines, ...prefs.custom];
+  return applyGroups([...fromSync, ...universityDates, ...personalDeadlines, ...prefs.custom], prefs);
 }

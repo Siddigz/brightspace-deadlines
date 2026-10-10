@@ -80,6 +80,7 @@ export const MOVE_DEADLINES = [
 // matching the pattern have a mark; add `dropWhenGraded` to remove it outright instead.
 // `notes` ([{ text, gradedAs }]) are appended to the title until their item is graded; once
 // every note is graded the entry is removed.
+// Entries (and notes) sharing a `group` are about the same thing: ticking one ticks them all.
 export const EXTRA_DEADLINES = [
   // COMP 2406: in-person tests, Fridays 10:00-11:30 in the tutorial room.
   { course: 'COMP 2406', title: 'Test 1 (HTML + CSS), in person', date: '2026-09-25T10:00', end: '2026-09-25T11:30', kind: 'test' },
@@ -105,14 +106,14 @@ export const EXTRA_DEADLINES = [
     [5, '2026-11-10'], [6, '2026-11-17'], [7, '2026-11-24'], [8, '2026-12-01'],
   ].map(([n, day]) => ({
     course: 'COMP 3000', title: `Get Tutorial ${n} marked by a TA (last chance: B2 tutorial, 6:05 PM)`, date: day, kind: 'tutorial',
-    gradedAs: `^Tutorial ${n}$`, dropWhenGraded: true,
+    gradedAs: `^Tutorial ${n}$`, dropWhenGraded: true, group: `tutorial-${n}`,
     url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_${n}`,
   })),
   // Your plan: get each tutorial marked at the B2 session the day after it's released (Mondays),
   // a week before the real deadline above.
   ...[[4, '2026-10-06'], [5, '2026-11-03'], [6, '2026-11-10'], [7, '2026-11-17'], [8, '2026-11-24']].map(([n, day]) => ({
     course: 'COMP 3000', title: `Get Tutorial ${n} marked at B2 tutorial (your plan; a week early)`, date: `${day}T18:05`, kind: 'tutorial',
-    gradedAs: `^Tutorial ${n}$`, dropWhenGraded: true,
+    gradedAs: `^Tutorial ${n}$`, dropWhenGraded: true, group: `tutorial-${n}`,
     url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_${n}`,
   })),
   // Your B2 tutorial sessions (Tue 18:05-19:25, Carleton Central). None in fall break (Oct 27).
@@ -124,8 +125,8 @@ export const EXTRA_DEADLINES = [
   ].map(([day, due, plan]) => ({
     course: 'COMP 3000', title: 'B2 tutorial', date: `${day}T18:05`, end: `${day}T19:25`, kind: 'tutorial',
     notes: [
-      plan && { text: `get Tutorial ${plan} marked`, gradedAs: `^Tutorial ${plan}$` },
-      due && { text: `last chance for Tutorial ${due}`, gradedAs: `^Tutorial ${due}$` },
+      plan && { text: `get Tutorial ${plan} marked`, gradedAs: `^Tutorial ${plan}$`, group: `tutorial-${plan}` },
+      due && { text: `last chance for Tutorial ${due}`, gradedAs: `^Tutorial ${due}$`, group: `tutorial-${due}` },
     ].filter(Boolean),
   })),
   // Section B: in class Wed Oct 21 (section A writes Tue Oct 20).

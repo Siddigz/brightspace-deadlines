@@ -492,6 +492,13 @@ view.addEventListener('change', (e) => {
     const id = t.dataset.done;
     const d = allDeadlines(state.snapshot, state.prefs).find((x) => x.id === id);
     updatePrefs((p) => {
+      // Grouped rows (every date for one tutorial) tick and clear together.
+      if (d?.group) {
+        if (t.checked) p.done[d.group] = true;
+        else delete p.done[d.group];
+        delete p.done[id];
+        return;
+      }
       // A checklist's own box ticks (or clears) every item on it.
       if (d?.checklist) {
         for (const x of d.checklist) {

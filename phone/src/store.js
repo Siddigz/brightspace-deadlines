@@ -1,6 +1,6 @@
 // Phone stand-in for the extension's store.js: same exports, backed by the gist (see boot.js).
 
-import { DEFAULT_PREFS } from './prefs.js';
+import { DEFAULT_PREFS, applyGroups } from './prefs.js';
 
 export { DEFAULT_PREFS, isDone } from './prefs.js';
 
@@ -18,5 +18,5 @@ export async function savePrefs(prefs) {
 
 // Deadlines arrive already worked out by the extension; only your own additions live in prefs.
 export function allDeadlines(_snapshot, prefs) {
-  return [...t().data.deadlines, ...prefs.custom];
+  return applyGroups([...t().data.deadlines, ...prefs.custom], prefs);
 }

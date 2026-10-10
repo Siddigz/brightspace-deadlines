@@ -197,7 +197,12 @@ async function syncCourse(client, course, now) {
 export function courseDeadlines(course) {
   const { code, ou } = course;
   const fromBrightspace = (course.deadlines || []).filter((d) => !d.id.startsWith('cfg:')); // older snapshots baked these in
-  const gradedNames = course.gradedNames || [];
+  // Names of grade items with a mark, from the sync and straight from the grade sheet.
+  const gradedNames = [...new Set([
+    ...(course.gradedNames || []),
+    ...(course.grades?.items || []).filter((it) => it.points != null).map((it) => it.name),
+  ])];
+  const groupId = (g) => (g ? `group:${slug(code)}:${slug(g)}` : undefined);
   const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const synced = new Set(fromBrightspace.map((d) => norm(d.title)));
   const countMatching = (pattern, names) => names.filter((n) => new RegExp(pattern, 'i').test(n)).length;
@@ -213,7 +218,9 @@ export function courseDeadlines(course) {
       // The id keeps every note, so it stays stable as notes drop off (and dates keep sessions apart).
       const fullTitle = `${x.title} (${x.notes.map((n) => n.text).join('; ')}) ${x.date}`;
       const open = x.notes.filter((n) => !graded(n.gradedAs));
-      return open.length ? [{ ...x, fullTitle, title: `${x.title} (${open.map((n) => n.text).join('; ')})` }] : [];
+      if (!open.length) return [];
+      const notes = open.map((n) => ({ text: n.text, group: groupId(n.group) }));
+      return [{ ...x, fullTitle, baseTitle: x.title, notes, title: `${x.title} (${open.map((n) => n.text).join('; ')})` }];
     })
     .map((x) => ({
       id: `cfg:${slug(code)}:${slug(x.fullTitle)}`,
@@ -227,6 +234,8 @@ export function courseDeadlines(course) {
       allDay: !!x.allDay,
       autoDone: !!x.gradedAs && graded(x.gradedAs, x.gradedCount),
       url: x.url || `${BASE}/d2l/home/${ou}`,
+      group: groupId(x.group),
+      ...(x.baseTitle ? { baseTitle: x.baseTitle, notes: x.notes } : {}),
     }));
 
   return [...fromBrightspace, ...extras].map((d) => moveEarlier(d, code)).map((d) => {
