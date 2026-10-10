@@ -219,19 +219,30 @@ export function courseDeadlines(course) {
   };
   const tutorials = (siteCfg && site ? site.tutorials : [])
     .filter((t) => !graded(`^Tutorial ${t.n}$`))
-    .map((t) => {
+    .flatMap((t) => {
       const [y, m, d] = t.available.split('-').map(Number);
-      return {
-        id: `site:${slug(code)}:tutorial-${t.n}`,
+      const { name, weekday, time } = siteCfg.session;
+      const [hh, mm] = time.split(':').map(Number);
+      // Your first session after the release day (released Monday -> Tuesday's session).
+      const first = new Date(y, m - 1, d + 1, hh, mm);
+      first.setDate(first.getDate() + ((weekday - first.getDay() + 7) % 7));
+      const at = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(first);
+      const row = (key, title, due) => ({
+        id: `site:${slug(code)}:tutorial-${t.n}-${key}`,
         course: code,
-        title: `Tutorial ${t.n}: get it marked by a TA`,
+        title,
         kind: 'tutorial',
         opens: new Date(y, m - 1, d).toISOString(),
-        due: new Date(y, m - 1, d + siteCfg.tutorialDays, 23, 59).toISOString(),
+        due: due.toISOString(),
         end: null,
         autoDone: false,
         url: siteCfg.tutorialUrl.replace('{n}', t.n),
-      };
+        group: groupId(`tutorial-${t.n}`), // ticking either one ticks both
+      });
+      return [
+        row('first', `Tutorial ${t.n}: get it marked at your ${name}`, first),
+        row('final', `Tutorial ${t.n}: last day to get it marked (${name}, ${at})`, new Date(y, m - 1, d + siteCfg.tutorialDays, 23, 59)),
+      ];
     });
 
   const extras = EXTRA_DEADLINES.filter((x) => x.course === code)

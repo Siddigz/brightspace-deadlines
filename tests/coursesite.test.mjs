@@ -26,15 +26,24 @@ test('COMP 3000 site: tutorials and assignments are read from their tables', () 
   assert.deepEqual(parseCourseSite('nothing here', 2026), { tutorials: [], assignments: [] });
 });
 
-test('COMP 3000 site tutorials are due 8 days after release and vanish once graded', () => {
+test('COMP 3000 site tutorials: two linked deadlines each (next B2 session, then 8 days after release); gone once graded', async () => {
+  const { isDone } = await import('../src/prefs.js');
   const course = {
     code: 'COMP 3000', ou: 3, deadlines: [], site: parseCourseSite(raw, 2026),
     grades: { items: [1, 2, 3, 4].map((n) => ({ id: `t${n}`, name: `Tutorial ${n}`, points: 4, outOf: 4 })) },
   };
-  const tut = courseDeadlines(course).filter((d) => d.kind === 'tutorial');
-  assert.deepEqual(tut.map((d) => d.title), [5, 6, 7, 8].map((n) => `Tutorial ${n}: get it marked by a TA`));
-  assert.equal(new Date(tut[0].opens).toString(), new Date(2026, 10, 2).toString());
-  assert.equal(new Date(tut[0].due).toString(), new Date(2026, 10, 10, 23, 59).toString());
+  const all = courseDeadlines(course);
+  const tut = all.filter((d) => d.kind === 'tutorial');
+  assert.equal(tut.length, 8); // tutorials 5-8, two rows each
+  const [first, final] = tut.filter((d) => d.title.startsWith('Tutorial 5:'));
+  assert.equal(first.title, 'Tutorial 5: get it marked at your B2 tutorial');
+  assert.equal(new Date(first.due).toString(), new Date(2026, 10, 3, 18, 5).toString()); // released Mon Nov 2 -> Tue Nov 3
+  assert.equal(final.title, 'Tutorial 5: last day to get it marked (B2 tutorial, 6:05 PM)');
+  assert.equal(new Date(final.due).toString(), new Date(2026, 10, 10, 23, 59).toString());
+  // Ticking one ticks the other, and only that tutorial.
+  const prefs = { done: { [first.group]: true }, checked: {} };
+  assert.equal(isDone(first, prefs) && isDone(final, prefs), true);
+  assert.equal(isDone(tut.find((d) => d.title.startsWith('Tutorial 6:')), prefs), false);
 });
 
 test('COMP 3000 assignment dates come from the site, falling back to config without it', () => {
