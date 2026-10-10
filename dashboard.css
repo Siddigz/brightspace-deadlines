@@ -10,6 +10,7 @@
   --good: #15803d;
   --warn: #b45309;
   --bad: #b91c1c;
+  --mark: #f59e0b;
   --radius: 10px;
   color-scheme: light;
 }
@@ -130,6 +131,11 @@ h2 { font-size: 15px; margin: 0; }
 .row .when { color: var(--muted); font-size: 12px; text-align: right; white-space: nowrap; }
 .row .when.soon { color: var(--warn); font-weight: 600; }
 .kind { color: var(--muted); font-size: 12px; margin-left: 6px; }
+/* Deadlines due before a `highlightUntil` one (see config.js), and that one itself. */
+.row.before-target { box-shadow: inset 4px 0 0 var(--mark); background: color-mix(in srgb, var(--mark) 9%, transparent); }
+.row.target { box-shadow: inset 4px 0 0 var(--mark); background: color-mix(in srgb, var(--mark) 28%, transparent); font-weight: 700; }
+.target-note { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 13px; }
+.target-note .swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--mark); flex: none; }
 input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
 
 .empty { color: var(--muted); padding: 24px; text-align: center; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
