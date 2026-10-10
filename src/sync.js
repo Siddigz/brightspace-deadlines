@@ -250,7 +250,10 @@ export function courseDeadlines(course) {
     });
 
   const extras = EXTRA_DEADLINES.filter((x) => x.course === code)
-    .map((x) => (siteAssignment(x.title) ? { ...x, date: siteAssignment(x.title).due, posted: siteAssignment(x.title).posted } : x))
+    .map((x) => {
+      const a = siteAssignment(x.title);
+      return a ? { ...x, date: x.keepDate ? x.date : a.due, posted: a.posted } : x;
+    })
     .filter((x) => !synced.has(norm(x.title)))
     .filter((x) => !(x.unless && countMatching(x.unless, syncedTitles) > 0))
     .filter((x) => !(x.dropWhenGraded && graded(x.gradedAs, x.gradedCount)))
@@ -273,7 +276,8 @@ export function courseDeadlines(course) {
       end: x.end ? localDate(x.end) : null,
       slot: !!x.end,
       allDay: !!x.allDay,
-      autoDone: !!x.gradedAs && graded(x.gradedAs, x.gradedCount),
+      autoDone: (!!x.gradedAs && graded(x.gradedAs, x.gradedCount))
+        || (!!x.doneWith && fromBrightspace.some((d) => d.autoDone && new RegExp(x.doneWith, 'i').test(d.title))),
       url: x.url || `${BASE}/d2l/home/${ou}`,
       group: groupId(x.group),
       ...(x.posted == null ? {} : { posted: x.posted, live: x.posted }),

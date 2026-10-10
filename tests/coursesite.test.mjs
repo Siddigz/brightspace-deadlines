@@ -108,3 +108,17 @@ test('the wiki is asked which tutorial and assignment pages exist yet', async ()
     globalThis.fetch = realFetch;
   }
 });
+
+test('COMP 3000 Assignment 2 keeps its announced date; the late cutoff ticks with the Brightspace submission', () => {
+  const site = { tutorials: [], assignments: [{ n: 2, due: '2026-10-15T14:30', posted: true }] };
+  const rows = (deadlines) => courseDeadlines({ code: 'COMP 3000', ou: 3, deadlines, site });
+  const a2 = rows([]).find((d) => d.title === 'Assignment 2');
+  assert.equal(new Date(a2.due).toString(), new Date(2026, 9, 16, 23, 59).toString()); // not the site's Oct 15
+  assert.equal(a2.live, true);
+  const late = (deadlines) => rows(deadlines).find((d) => d.title.startsWith('Assignment 2: last chance'));
+  assert.equal(new Date(late([]).due).toString(), new Date(2026, 9, 17, 23, 59).toString());
+  const folder = (autoDone) => [{ id: '3:drop:9', title: 'Assignment 2', kind: 'assignment', due: new Date(2026, 9, 16, 23, 59).toISOString(), autoDone }];
+  assert.equal(late(folder(false)).autoDone, false);
+  assert.equal(late(folder(true)).autoDone, true);
+  assert.equal(rows(folder(false)).filter((d) => d.title === 'Assignment 2').length, 1); // Brightspace's row replaces the config one
+});
