@@ -85,7 +85,7 @@ export const EXTRA_DEADLINES = [
   { course: 'COMP 2406', title: 'Test 3 (AJAX), in person', date: '2026-10-23T10:00', end: '2026-10-23T11:30', kind: 'test' },
   { course: 'COMP 2406', title: 'Test 4 (Node + EJS/PUG), in person', date: '2026-11-20T10:00', end: '2026-11-20T11:30', kind: 'test' },
   { course: 'COMP 2406', title: 'Test 5 (Express + MongoDB), in person', date: '2026-12-04T10:00', end: '2026-12-04T11:30', kind: 'test' },
-  { course: 'COMP 2406', title: 'Final exam (date TBA; must pass)', date: '2026-12-12', end: '2026-12-23', kind: 'test', allDay: true },
+  { course: 'COMP 2406', title: 'Final exam (must pass; room TBA)', date: '2026-12-14T09:00', end: '2026-12-14T12:00', kind: 'test' },
   // Tutorials 4 and 6 unlock after 3 and 5, so Brightspace doesn't list them yet. Due with them (Fri 10:00).
   { course: 'COMP 2406', title: 'Tutorial 4', date: '2026-10-09T10:00', kind: 'quiz', unless: '^Tutorial 4$', gradedAs: '^Tutorial 4$' },
   { course: 'COMP 2406', title: 'Tutorial 6', date: '2026-10-23T10:00', kind: 'quiz', unless: '^Tutorial 6$', gradedAs: '^Tutorial 6$' },
@@ -128,7 +128,7 @@ export const EXTRA_DEADLINES = [
   })),
   // Section B: in class Wed Oct 21 (section A writes Tue Oct 20).
   { course: 'COMP 3000', title: 'Midterm, in class (closed book)', date: '2026-10-21T08:35', end: '2026-10-21T09:55', kind: 'test' },
-  { course: 'COMP 3000', title: 'Final exam (date TBA)', date: '2026-12-12', end: '2026-12-23', kind: 'test', allDay: true },
+  { course: 'COMP 3000', title: 'Final exam (room TBA)', date: '2026-12-17T09:00', end: '2026-12-17T11:30', kind: 'test' },
 
   // CLCV 2105: each lesson's two quizzes (no dates in Brightspace) and its mini-assignment (Brightspace
   // only creates the submission folder when the lesson opens), due Sunday 11:59 PM per the outline.
@@ -151,8 +151,8 @@ export const EXTRA_DEADLINES = [
   // CLCV 2305: late papers are accepted (with a penalty) until this date only.
   { course: 'CLCV 2305', title: 'Last day for late papers (with penalty)', date: '2027-04-10', kind: 'assignment' },
 
-  // CLCV 2105: proctored online exams (CoMaS) during the exam periods; exact dates TBA.
-  { course: 'CLCV 2105', title: 'Fall exam, CoMaS proctored (date TBA)', date: '2026-12-12', end: '2026-12-23', kind: 'test', allDay: true },
+  // CLCV 2105: proctored online exams (CoMaS) during the exam periods; winter date TBA.
+  { course: 'CLCV 2105', title: 'Fall exam, CoMaS proctored', date: '2026-12-15T14:00', end: '2026-12-15T16:30', kind: 'test' },
   { course: 'CLCV 2105', title: 'Winter exam, CoMaS proctored (date TBA)', date: '2027-04-11', end: '2027-04-23', kind: 'test', allDay: true },
 ];
 
