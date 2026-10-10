@@ -33,11 +33,15 @@ export function applyGroups(deadlines, prefs) {
 
 // What you can work on right now: it exists (`live`), has opened, hasn't closed, and isn't done
 // or hidden. Soonest to close first; grouped rows (a tutorial's two deadlines) show once.
+// In a one-at-a-time course, something waits until every earlier deadline in that course has passed.
 export function openNow(deadlines, prefs, now = Date.now()) {
   const seen = new Set();
+  const upcoming = deadlines.filter((d) => d.oneAtATime && Date.parse(d.due) > now);
+  const mustWait = (d) => d.oneAtATime && upcoming.some((o) => o.course === d.course && Date.parse(o.due) < Date.parse(d.due));
   return deadlines
     .filter((d) => d.live && !prefs.hidden?.[d.id] && !isDone(d, prefs))
     .filter((d) => (!d.opens || Date.parse(d.opens) <= now) && Date.parse(d.due) > now)
+    .filter((d) => !mustWait(d))
     .sort((a, b) => Date.parse(a.due) - Date.parse(b.due))
     .filter((d) => !d.group || (!seen.has(d.group) && seen.add(d.group)));
 }

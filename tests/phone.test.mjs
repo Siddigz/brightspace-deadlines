@@ -58,3 +58,19 @@ test('Open now: live things that have opened, not closed, not done; a group show
   const ids = openNow(list, { done: {}, hidden: { hidden: true }, checked: {} }, now).map((d) => d.id);
   assert.deepEqual(ids, ['no-start', 't6-first', 'open', 't4-final']);
 });
+
+test('Open now, one-at-a-time course: later work waits until the earlier deadline has passed', () => {
+  const day = 86400000;
+  const base = Date.parse('2026-10-10T12:00:00Z');
+  const item = (id, due, extra = {}) => ({ id, course: 'CLCV 2305', live: true, oneAtATime: true, opens: null, due: new Date(base + due * day).toISOString(), ...extra });
+  const list = [
+    item('ancient', 23), item('modern', 100), item('essay', 170),
+    { id: 'other', course: 'CLCV 2105', live: true, opens: null, due: new Date(base + 150 * day).toISOString() },
+  ];
+  const ids = (prefs, now) => openNow(list, { done: {}, hidden: {}, checked: {}, ...prefs }, now).map((d) => d.id);
+  assert.deepEqual(ids({}, base), ['ancient', 'other']);
+  // Handing it in early doesn't bring the next one forward; only the deadline passing does.
+  assert.deepEqual(ids({ done: { ancient: true } }, base), ['other']);
+  assert.deepEqual(ids({}, base + 24 * day), ['modern', 'other']);
+  assert.deepEqual(ids({}, base + 101 * day), ['other', 'essay']);
+});
