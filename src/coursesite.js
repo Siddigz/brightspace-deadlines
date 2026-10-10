@@ -78,6 +78,7 @@ export function siteProblems(snapshot) {
     if (c.siteError) {
       return [`Couldn't read the ${c.code} course website (${c.siteError}). ${c.site ? 'Its dates are from the last time it worked.' : 'Its tutorials are missing until it can.'}`];
     }
-    return c.site ? [] : [`The ${c.code} course website hasn't been read yet, so its tutorials are missing. Press Sync now.`];
+    // Still missing after a sync means the background worker is running old code.
+    return c.site ? [] : [`The ${c.code} course website hasn't been read yet, so its tutorials are missing. Press Sync now. If this stays, reload the extension at chrome://extensions (the ↻ on its card), then sync again.`];
   });
 }
