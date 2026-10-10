@@ -79,13 +79,10 @@ export const DUE_OVERRIDES = {
   },
 };
 
-// Your own earlier deadlines: anything in `course` whose title matches `match` and is due on
-// weekday `from` (0 = Sun ... 5 = Fri) shows as due on the weekday `to` before it, at `time`.
-// The real closing time still shows on the row.
-export const MOVE_DEADLINES = [
-  // COMP 2406 tutorials close Friday 10:00 AM; finish them Thursday night instead.
-  { course: 'COMP 2406', match: '^Tutorial \\d+$', from: 5, to: 4, time: '23:59' },
-];
+// Anything due partway through a day (Friday 10:00 AM, Thursday 2:30 PM) shows as due at 11:59 PM
+// the night before, with the real closing time still on the row. Sittings (tests, sessions, and
+// quizzes that open and close the same day) keep their real time.
+export const DUE_NIGHT_BEFORE = true;
 
 // Deadlines that aren't in Brightspace (or have no date there). `date` is local time
 // ('2026-10-15T14:30'; a bare date means 11:59 PM). `end` makes it a time slot (a test sitting,

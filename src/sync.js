@@ -1,7 +1,7 @@
 // Pulls everything the dashboard needs from Brightspace into one plain-JSON snapshot.
 // Only depends on a client with get / getAllObjects / getAllItems (see d2l.js).
 
-import { BASE, COURSE_ORDER, COURSE_SITES, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, MOVE_DEADLINES, ONE_AT_A_TIME } from './config.js';
+import { BASE, COURSE_ORDER, COURSE_SITES, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, DUE_NIGHT_BEFORE, ONE_AT_A_TIME } from './config.js';
 import { LP, LE } from './d2l.js';
 
 const DAY = 86400000;
@@ -244,7 +244,7 @@ export function courseDeadlines(course) {
         live: t.posted === true,
       });
       return [
-        row('first', `Tutorial ${t.n}: get it marked at your ${name}`, first),
+        { ...row('first', `Tutorial ${t.n}: get it marked at your ${name}`, first), fixedTime: true }, // it's a session
         row('final', `Tutorial ${t.n}: last day to get it marked (${name}, ${at})`, new Date(y, m - 1, d + siteCfg.tutorialDays, 23, 59)),
       ];
     });
@@ -286,7 +286,7 @@ export function courseDeadlines(course) {
   const gradedWords = gradedNames.map(words).filter((g) => g.length >= 4);
   const hasMark = (title) => gradedWords.some((g) => words(title) === g || words(title).startsWith(`${g} `));
 
-  return [...fromBrightspace, ...extras, ...tutorials].map((d) => moveEarlier(d, code)).map((d) => {
+  return [...fromBrightspace, ...extras, ...tutorials].map(moveEarlier).map((d) => {
     if (!d.autoDone && hasMark(d.title)) d = { ...d, autoDone: true };
     // Hand-in work only: a quiz or exam neither waits its turn nor holds the next paper back.
     if (d.live && d.kind === 'assignment' && ONE_AT_A_TIME.includes(code)) d = { ...d, oneAtATime: true };
@@ -296,14 +296,15 @@ export function courseDeadlines(course) {
   });
 }
 
-// Applies MOVE_DEADLINES; the real due time is kept as `realDue`.
-function moveEarlier(d, code) {
-  if (!d.due || d.slot) return d;
+// Applies DUE_NIGHT_BEFORE: a hand-in due partway through a day moves to 11:59 PM the night
+// before. The real due time is kept as `realDue`.
+function moveEarlier(d) {
+  if (!DUE_NIGHT_BEFORE || !d.due || d.slot || d.end || d.kind === 'event' || d.fixedTime) return d;
   const due = new Date(d.due);
-  const rule = MOVE_DEADLINES.find((m) => m.course === code && due.getDay() === m.from && new RegExp(m.match, 'i').test(d.title));
-  if (!rule) return d;
-  const [hh, mm] = rule.time.split(':').map(Number);
-  const moved = new Date(due.getFullYear(), due.getMonth(), due.getDate() - ((rule.from - rule.to + 7) % 7 || 7), hh, mm);
+  if (due.getHours() === 23 && due.getMinutes() >= 55) return d; // already end of day
+  // A window inside one day is a sitting, not a hand-in.
+  if (d.opens && new Date(d.opens).toDateString() === due.toDateString()) return d;
+  const moved = new Date(due.getFullYear(), due.getMonth(), due.getDate() - 1, 23, 59);
   return { ...d, due: moved.toISOString(), realDue: d.due };
 }
 

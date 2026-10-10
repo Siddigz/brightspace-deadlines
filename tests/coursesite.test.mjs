@@ -51,7 +51,10 @@ test('COMP 3000 site tutorials: two linked deadlines each (next B2 session, then
 test('COMP 3000 assignment dates come from the site, falling back to config without it', () => {
   const due = (course, n) => new Date(courseDeadlines(course).find((d) => d.title === `Assignment ${n}`).due).toString();
   const site = { tutorials: [], assignments: [{ n: 3, due: '2026-11-20T14:30' }] };
-  assert.equal(due({ code: 'COMP 3000', ou: 3, deadlines: [], site }, 3), new Date(2026, 10, 20, 14, 30).toString());
+  // Due 2:30 PM on the site, so it shows the night before with the real time kept.
+  assert.equal(due({ code: 'COMP 3000', ou: 3, deadlines: [], site }, 3), new Date(2026, 10, 19, 23, 59).toString());
+  const a3 = courseDeadlines({ code: 'COMP 3000', ou: 3, deadlines: [], site }).find((d) => d.title === 'Assignment 3');
+  assert.equal(new Date(a3.realDue).toString(), new Date(2026, 10, 20, 14, 30).toString());
   assert.equal(due({ code: 'COMP 3000', ou: 3, deadlines: [], site }, 4), new Date(2026, 11, 7, 23, 59).toString());
   assert.equal(due({ code: 'COMP 3000', ou: 3, deadlines: [] }, 3), new Date(2026, 10, 16, 23, 59).toString());
 });

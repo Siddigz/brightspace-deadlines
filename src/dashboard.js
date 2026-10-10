@@ -304,7 +304,7 @@ function renderDeadlines() {
   const side = `<aside class="open-now" aria-label="Open now">
     <h2>Open now <span class="count">${open.length}</span></h2>
     ${open.map((d) => {
-      const t = Date.parse(d.due);
+      const t = Date.parse(d.realDue || d.due);
       return `<a class="open-item" href="${esc(d.url)}" target="_blank" style="--c:${color(d.course)}">
         <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
         <span class="open-title">${esc(d.title)}</span>

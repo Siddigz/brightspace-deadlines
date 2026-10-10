@@ -43,22 +43,31 @@ test('CLCV 2105: quizzes done once both are graded; config mini-assignment gives
   assert.equal(find('Lesson 5: Mini-assignment').length, 1); // config placeholder until the folder exists
 });
 
-test('COMP 2406 tutorials due Friday 10:00 show as due Thursday 11:59 PM', () => {
-  const fri = new Date(2026, 9, 9, 10, 0).toISOString();
+test('hand-ins due partway through a day show as due 11:59 PM the night before', () => {
+  const at = (...d) => new Date(...d).toISOString();
+  const fri = at(2026, 9, 9, 10, 0);
   const course = {
     code: 'COMP 2406', ou: 2,
     deadlines: [
-      { id: '2:q:1', title: 'Tutorial 3', kind: 'quiz', due: fri },
-      { id: '2:q:2', title: 'Test 2 (JS + DOM)', kind: 'quiz', due: fri },
+      { id: '2:quiz:1', title: 'Tutorial 3', kind: 'quiz', due: fri },
+      { id: '2:drop:2', title: 'Assignment 2', kind: 'assignment', due: at(2026, 9, 15, 23, 59) }, // already end of day
+      { id: '2:drop:3', title: 'Assignment 3', kind: 'assignment', due: at(2026, 9, 22, 0, 0) }, // midnight = the night before
+      { id: '2:quiz:4', title: 'Midterm sitting', kind: 'test', opens: at(2026, 9, 20, 14, 30), due: at(2026, 9, 20, 15, 0) },
+      { id: '2:quiz:5', title: 'Take-home window', kind: 'test', opens: at(2026, 11, 12, 10, 0), due: at(2026, 11, 23, 17, 0) },
     ],
   };
   const list = courseDeadlines(course);
-  const t3 = list.find((d) => d.title === 'Tutorial 3');
-  assert.equal(new Date(t3.due).toString(), new Date(2026, 9, 8, 23, 59).toString());
-  assert.equal(t3.realDue, fri);
-  assert.equal(list.find((d) => d.title.startsWith('Test 2')).due, fri); // only tutorials move
-  const t4 = list.find((d) => d.title === 'Tutorial 4'); // from config, also Friday 10:00
-  assert.equal(new Date(t4.due).toString(), new Date(2026, 9, 8, 23, 59).toString());
+  const row = (title) => list.find((d) => d.title === title);
+  const due = (title) => new Date(row(title).due).toString();
+  assert.equal(due('Tutorial 3'), new Date(2026, 9, 8, 23, 59).toString());
+  assert.equal(row('Tutorial 3').realDue, fri);
+  assert.equal(due('Tutorial 4'), new Date(2026, 9, 8, 23, 59).toString()); // from config, also Friday 10:00
+  assert.equal(row('Assignment 2').realDue, undefined);
+  assert.equal(due('Assignment 3'), new Date(2026, 9, 21, 23, 59).toString());
+  assert.equal(row('Midterm sitting').realDue, undefined); // opens and closes the same day
+  assert.equal(due('Take-home window'), new Date(2026, 11, 22, 23, 59).toString());
+  // In-person tests are time slots and stay put.
+  assert.equal(new Date(row('Test 2 (JS + DOM), in person').due).toString(), new Date(2026, 9, 9, 10, 0).toString());
 });
 
 test('a mark in the gradebook ticks any deadline named after that grade item', () => {
