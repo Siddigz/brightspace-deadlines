@@ -53,10 +53,31 @@ export async function attachSites(snapshot, previous) {
       if (!res.ok) throw new Error(`${res.status}`);
       const site = parseCourseSite(await res.text(), cfg.year);
       // An empty result means the page changed shape; don't trust it over what we had.
-      course.site = site.tutorials.length || site.assignments.length ? { ...site, fetchedAt: snapshot.syncedAt } : old;
-    } catch {
+      const usable = site.tutorials.length || site.assignments.length;
+      course.site = usable ? { ...site, fetchedAt: snapshot.syncedAt } : old;
+      course.siteError = usable ? null : 'the page no longer has the tutorial and assignment tables';
+    } catch (e) {
       course.site = old;
+      course.siteError = await whyFailed(cfg.url, e);
     }
   }
   return snapshot;
+}
+
+// A blocked cross-site request only says "Failed to fetch"; say if it's Chrome's site access.
+async function whyFailed(url, e) {
+  const origin = `${new URL(url).origin}/*`;
+  const allowed = await globalThis.chrome?.permissions?.contains({ origins: [origin] }).catch(() => true);
+  if (allowed === false) return `Chrome hasn't given the extension access to ${new URL(url).host}`;
+  return /^\d+$/.test(e.message) ? `the site answered ${e.message}` : e.message;
+}
+
+// What to tell the user about course websites that couldn't be read, if anything.
+export function siteProblems(snapshot) {
+  return (snapshot?.courses || []).filter((c) => COURSE_SITES[c.code]).flatMap((c) => {
+    if (c.siteError) {
+      return [`Couldn't read the ${c.code} course website (${c.siteError}). ${c.site ? 'Its dates are from the last time it worked.' : 'Its tutorials are missing until it can.'}`];
+    }
+    return c.site ? [] : [`The ${c.code} course website hasn't been read yet, so its tutorials are missing. Press Sync now.`];
+  });
 }

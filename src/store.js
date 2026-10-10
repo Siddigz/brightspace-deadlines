@@ -7,6 +7,8 @@ import { UNIVERSITY_DATES, PERSONAL_DEADLINES } from './config.js';
 import { DEFAULT_PREFS, applyGroups } from './prefs.js';
 import { attachSites } from './coursesite.js';
 
+export { siteProblems } from './coursesite.js';
+
 export { DEFAULT_PREFS, isDone } from './prefs.js';
 
 export async function load() {

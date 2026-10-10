@@ -16,6 +16,9 @@ export async function savePrefs(prefs) {
   t().savePrefs(prefs);
 }
 
+// Course websites are read by the extension, not here.
+export const siteProblems = () => [];
+
 // Deadlines arrive already worked out by the extension; only your own additions live in prefs.
 export function allDeadlines(_snapshot, prefs) {
   return applyGroups([...t().data.deadlines, ...prefs.custom], prefs);

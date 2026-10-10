@@ -44,3 +44,30 @@ test('COMP 3000 assignment dates come from the site, falling back to config with
   assert.equal(due({ code: 'COMP 3000', ou: 3, deadlines: [], site }, 4), new Date(2026, 11, 7, 23, 59).toString());
   assert.equal(due({ code: 'COMP 3000', ou: 3, deadlines: [] }, 3), new Date(2026, 10, 16, 23, 59).toString());
 });
+
+test('a course website that could not be read is reported, not silently skipped', async () => {
+  const { attachSites, siteProblems } = await import('../src/coursesite.js');
+  const realFetch = globalThis.fetch;
+  const snap = () => ({ syncedAt: '2026-10-10T12:00:00.000Z', courses: [{ code: 'COMP 3000' }, { code: 'BIOL 1010' }] });
+  try {
+    assert.match(siteProblems(snap())[0], /hasn't been read yet/);
+
+    globalThis.fetch = async () => { throw new TypeError('Failed to fetch'); };
+    const failed = await attachSites(snap(), null);
+    assert.equal(failed.courses[0].site, null);
+    assert.match(siteProblems(failed)[0], /Couldn't read the COMP 3000 course website \(Failed to fetch\).*missing/);
+
+    globalThis.fetch = async () => new Response(raw);
+    const ok = await attachSites(snap(), null);
+    assert.equal(ok.courses[0].site.tutorials.length, 8);
+    assert.deepEqual(siteProblems(ok), []);
+
+    // A later failure keeps the last good copy.
+    globalThis.fetch = async () => new Response('gone', { status: 503 });
+    const later = await attachSites(snap(), ok);
+    assert.equal(later.courses[0].site.tutorials.length, 8);
+    assert.match(siteProblems(later)[0], /the site answered 503.*last time it worked/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

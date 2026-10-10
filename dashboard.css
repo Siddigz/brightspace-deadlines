@@ -134,6 +134,7 @@ h2 { font-size: 15px; margin: 0; }
 /* Deadlines due before a `highlightUntil` one (see config.js), and that one itself. */
 .row.before-target { box-shadow: inset 4px 0 0 var(--mark); background: color-mix(in srgb, var(--mark) 9%, transparent); }
 .row.target { box-shadow: inset 4px 0 0 var(--mark); background: color-mix(in srgb, var(--mark) 28%, transparent); font-weight: 700; }
+.site-note { margin: 0 0 14px; padding: 8px 12px; font-size: 13px; border: 1px solid var(--warn); border-radius: var(--radius); color: var(--warn); }
 .target-note { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 13px; }
 .target-note .swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--mark); flex: none; }
 input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }

@@ -1,5 +1,5 @@
 import { COURSE_COLORS, CODE_LABELS, BASE, OUTLINES } from './config.js';
-import { load, savePrefs, isDone, allDeadlines } from './store.js';
+import { load, savePrefs, isDone, allDeadlines, siteProblems } from './store.js';
 import { applyOutline, computeCourse, termSheet, letter } from './grades.js';
 
 const DAY = 86400000;
@@ -260,6 +260,7 @@ function renderDeadlines() {
     <label><input type="checkbox" data-opt="bonusOnly" ${state.bonusOnly ? 'checked' : ''}> Only bonus-mark items</label>
     ${Object.keys(prefs.hidden).length ? `<button class="btn small" data-action="unhide">Unhide ${Object.keys(prefs.hidden).length} hidden</button>` : ''}
   </div>`;
+  for (const problem of siteProblems(state.snapshot)) html += `<p class="site-note">${esc(problem)}</p>`;
   if (target) {
     html += `<p class="target-note"><span class="swatch"></span>Highlighted: everything before <b>${esc(target.title)}</b> · ${esc(dayFmt.format(new Date(target.t)))} · ${relative(target.t)}</p>`;
   }
