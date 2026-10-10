@@ -66,6 +66,7 @@ const personalDeadlines = PERSONAL_DEADLINES.map((x) => ({
   url: x.url,
   checklist: x.checklist,
   highlightUntil: x.highlightUntil,
+  locked: x.locked,
 }));
 
 export function allDeadlines(snapshot, prefs) {

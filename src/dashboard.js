@@ -203,7 +203,7 @@ function renderDeadlines() {
   const { prefs } = state;
 
   let items = allDeadlines(state.snapshot, prefs)
-    .filter((d) => !state.hiddenCourses.has(d.course) && !prefs.hidden[d.id])
+    .filter((d) => !state.hiddenCourses.has(d.course) && (!prefs.hidden[d.id] || d.locked))
     .map((d) => ({ ...d, t: Date.parse(d.due), done: isDone(d, prefs) }));
 
   if (!state.showDone) items = items.filter((d) => !d.done);
@@ -238,11 +238,13 @@ function renderDeadlines() {
   const row = (d) => {
     const soon = !d.done && d.t > now && d.t - now < 2 * DAY;
     return `<div class="row ${d.done ? 'done' : ''} ${mark(d)}">
-      <input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">
+      ${d.locked
+    ? '<input type="checkbox" disabled title="Locked: this one cannot be ticked off or removed" aria-label="Locked">'
+    : `<input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">`}
       <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
       <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
       <span class="when ${soon ? 'soon' : ''}" title="${esc(longFmt.format(new Date(d.t)))}">${esc(whenText(d))}${d.t > now ? ` · ${relative(d.t)}` : ''}</span>
-      <button class="icon-btn" data-hide="${esc(d.id)}" title="Hide this item" aria-label="Hide">×</button>
+      ${d.locked ? '' : `<button class="icon-btn" data-hide="${esc(d.id)}" title="Hide this item" aria-label="Hide">×</button>`}
     </div>`;
   };
 

@@ -74,3 +74,8 @@ test('Open now, one-at-a-time course: later work waits until the earlier deadlin
   assert.deepEqual(ids({}, base + 24 * day), ['modern', 'other']);
   assert.deepEqual(ids({}, base + 101 * day), ['other', 'essay']);
 });
+
+test('a locked deadline is never done, whatever was ticked before', () => {
+  const d = { id: 'g', locked: true, autoDone: true };
+  assert.equal(isDone(d, { done: { g: true }, checked: {} }), false);
+});

@@ -47,6 +47,7 @@ export const UNIVERSITY_DATES = [
 // `date` is local time; a bare date means 11:59 PM that day. `end` makes it a time slot.
 // `allDay` is for a day with no set time yet (shows as "all day", never overdue).
 // `highlightUntil` highlights every deadline due before this one, until it has passed.
+// `locked` means it can't be ticked off or hidden; it stays until its date has passed.
 export const PERSONAL_DEADLINES = [
   { title: 'Job interview', date: '2026-10-19T13:00', end: '2026-10-19T13:45', kind: 'interview', highlightUntil: true },
   { title: 'Online assessment (timed)', date: '2026-10-14', kind: 'test' },

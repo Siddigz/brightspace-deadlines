@@ -12,6 +12,7 @@ export const DEFAULT_PREFS = {
 // Deadline is done if the user said so, otherwise if Brightspace shows a submission/grade,
 // or (for a checklist) once every item on it is ticked.
 export function isDone(d, prefs) {
+  if (d.locked) return false; // can't be ticked off
   const manual = prefs.done[d.id] ?? (d.group ? prefs.done[d.group] : undefined);
   if (manual != null) return manual;
   if (d.checklist) return d.checklist.every((x) => prefs.checked?.[x]);

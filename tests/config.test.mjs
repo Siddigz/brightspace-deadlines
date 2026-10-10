@@ -58,3 +58,11 @@ test('the build fingerprint covers every file the background worker loads', asyn
   for (const f of seen) assert.ok(listed.has(f), `${f} is loaded by the worker but not in build.js`);
   assert.ok(listed.has('manifest.json'));
 });
+
+// dashboard.js and friends only run in the browser, so nothing else here would notice a typo in them.
+test('every source file parses', async () => {
+  const { readdir } = await import('node:fs/promises');
+  const { execFileSync } = await import('node:child_process');
+  const files = [...(await readdir('src')).map((f) => `src/${f}`), 'phone/boot.js', 'phone/src/store.js', 'phone/src/config.js'];
+  for (const f of files.filter((x) => x.endsWith('.js'))) execFileSync(process.execPath, ['--check', f], { stdio: 'pipe' });
+});
