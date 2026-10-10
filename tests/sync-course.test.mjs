@@ -60,3 +60,25 @@ test('COMP 2406 tutorials due Friday 10:00 show as due Thursday 11:59 PM', () =>
   const t4 = list.find((d) => d.title === 'Tutorial 4'); // from config, also Friday 10:00
   assert.equal(new Date(t4.due).toString(), new Date(2026, 9, 8, 23, 59).toString());
 });
+
+test('a mark in the gradebook ticks any deadline named after that grade item', () => {
+  const item = (name, points = 8) => ({ id: name, name, points, outOf: 10 });
+  const comp = courseDeadlines({
+    code: 'COMP 2406', ou: 2,
+    deadlines: [{ id: '2:q:9', title: 'Tutorial 10', kind: 'quiz', due: new Date(2026, 10, 27, 10).toISOString(), autoDone: false }],
+    grades: { items: [item('Test 1'), item('Test 3', null), item('Tutorial 1'), item('Final Exam')] },
+  });
+  const done = (list, start) => list.find((d) => d.title.startsWith(start)).autoDone;
+  assert.equal(done(comp, 'Test 1 (HTML + CSS)'), true); // in-person test from config
+  assert.equal(done(comp, 'Test 2 (JS + DOM)'), false); // no grade item with a mark
+  assert.equal(done(comp, 'Test 3 (AJAX)'), false); // grade item exists but has no mark yet
+  assert.equal(done(comp, 'Final exam (must pass'), true);
+  assert.equal(done(comp, 'Tutorial 10'), false); // "Tutorial 1" must not tick "Tutorial 10"
+
+  const clcv = courseDeadlines({
+    code: 'CLCV 2105', ou: 4, deadlines: [],
+    grades: { items: [item('Lesson 7: Quiz 1 (5 questions)'), item('Lesson 7: Quiz 2 (5 questions)'), item('Lesson 8: Quiz 1 (5 questions)')] },
+  });
+  assert.equal(done(clcv, 'Lesson 7: Quiz 1 and Quiz 2'), true);
+  assert.equal(done(clcv, 'Lesson 8: Quiz 1 and Quiz 2'), false); // only one of the two so far
+});

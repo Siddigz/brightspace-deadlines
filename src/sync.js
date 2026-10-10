@@ -275,7 +275,14 @@ export function courseDeadlines(course) {
       ...(x.baseTitle ? { baseTitle: x.baseTitle, notes: x.notes } : {}),
     }));
 
+  // Any grade update ticks what it can: a deadline is done once a grade item with a mark has
+  // its name, or the name its title starts with ("Test 2" marks "Test 2 (JS + DOM), in person").
+  const words = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const gradedWords = gradedNames.map(words).filter((g) => g.length >= 4);
+  const hasMark = (title) => gradedWords.some((g) => words(title) === g || words(title).startsWith(`${g} `));
+
   return [...fromBrightspace, ...extras, ...tutorials].map((d) => moveEarlier(d, code)).map((d) => {
+    if (!d.autoDone && hasMark(d.title)) d = { ...d, autoDone: true };
     const rule = BONUS_DEADLINES.find((b) => b.course === code && new RegExp(b.match, 'i').test(d.title));
     const bonus = rule ? rule.note : d.bonus || /bonus/i.test(d.title) ? 'Bonus marks' : null;
     return bonus ? { ...d, bonus } : { ...d, bonus: undefined };
