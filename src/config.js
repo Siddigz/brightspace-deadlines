@@ -46,9 +46,7 @@ export const UNIVERSITY_DATES = [
 // Your own deadlines, outside any course. They show under "Personal" and can be ticked off.
 // `date` is local time; a bare date means 11:59 PM that day. `end` makes it a time slot.
 // `allDay` is for a day with no set time yet (shows as "all day", never overdue).
-// `highlightUntil` highlights every deadline due before this one, until it has passed.
 export const PERSONAL_DEADLINES = [
-  { title: 'Job interview', date: '2026-10-19T13:00', end: '2026-10-19T13:45', kind: 'interview', highlightUntil: true },
   { title: 'Online assessment (timed)', date: '2026-10-14', kind: 'test' },
   { title: 'Club meeting', date: '2026-10-15T18:00', kind: 'event' },
   { title: 'Renew bus pass', date: '2026-10-16', kind: 'errand' },
