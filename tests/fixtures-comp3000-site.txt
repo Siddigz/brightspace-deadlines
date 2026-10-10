@@ -1,0 +1,416 @@
+==Course Outline==
+
+[[Operating Systems (Fall 2026) Course Outline|Here]] is the course outline for COMP 3000: Operating Systems.
+
+==Lectures & Exams==
+
+<table style="width: 100%;" border="1" cellpadding="4" cellspacing="0">
+  <tr valign="top">
+    <th>
+    <p align="left">Date</p>
+    </th>
+    <th>
+    <p align="left">Topic</p>
+    </th>
+  </tr>
+    <tr>
+      <td>
+      <p>Sep. 9, 10
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 1|Lecture 1]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Sep. 15, 16
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 2|Lecture 2]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Sep. 17, 18
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 3|Lecture 3]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Sep. 22, 23
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 4|Lecture 4]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Sep. 24, 25
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 5|Lecture 5]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Sep. 29, 30
+      </p>
+      </td>
+      <td>
+	<p>'''No class ([https://www.nspw.org NSPW])'''<br>(Last day to withdraw with fee adjustment: Sep. 30)
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct. 2
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 6|Lecture 6]]<br>'''No class on Oct 1 ([https://www.nspw.org NSPW])'''</br>
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct. 6, 7
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 7|Lecture 7]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct. 8, 9
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 8|Lecture 8]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct. 13, 14
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 9|Lecture 9]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct. 15, 16
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 10|Midterm Review]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct. 20, 21
+      </p>
+      </td>
+      <td>
+      <p>'''Midterm Exam (in class)'''
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct. 22, 23
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 11|Lecture 11]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 3, 4
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 12|Lecture 12]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 5, 6
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 13|Lecture 13]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 10, 11
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 14|Lecture 14]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 12, 13
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 15|Lecture 15]]<br>
+	  (Last day to withdraw Nov. 13)
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 17, 18
+      </p>
+      </td>
+      <td>
+	<p>[[Operating Systems 2026F Lecture 16|Lecture 16]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 19, 20
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 17|Lecture 17]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 24, 25
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 18|Lecture 18]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 26, 27
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 19|Lecture 19]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Dec. 1, 2
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 20|Lecture 20]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Dec. 3, 4
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 21|Lecture 21]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Dec. 8, 9
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F Lecture 22|Lecture 22]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Dec. 17, 9 AM
+      </p>
+      </td>
+      <td>
+      <p>Final Exam
+      </p>
+      </td>
+    </tr>
+</table>
+
+==Tutorials==
+
+Tutorials must be marked within 8 days of the tutorial being made available. (For example, T1 must be marked by the end of Sept. 22nd.)
+
+<table style="width: 100%;" border="1" cellpadding="4" cellspacing="0">
+  <tr valign="top">
+    <th>
+    <p align="left">Date Available</p>
+    </th>
+    <th>
+    <p align="left">Tutorials</p>
+    </th>
+  </tr>
+    <tr>
+      <td>
+      <p>Sep. 14
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Tutorial 1|Tutorial 1]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Sep. 21
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Tutorial 2|Tutorial 2]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Sep. 28
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Tutorial 3|Tutorial 3]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct 5
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Tutorial 4|Tutorial 4]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 2
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Tutorial 5|Tutorial 5]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 9
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Tutorial 6|Tutorial 6]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+    <tr>
+      <td>
+      <p>Nov. 16
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Tutorial 7|Tutorial 7]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 23
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Tutorial 8|Tutorial 8]]
+      </p>
+      </td>
+    </tr>
+</table>
+
+==Assignments==
+
+<table style="width: 100%;" border="1" cellpadding="4" cellspacing="0">
+  <tr valign="top">
+    <th>
+    <p align="left">Due Date</p>
+    </th>
+    <th>
+    <p align="left">Assignments</p>
+    </th>
+  </tr>
+    <tr>
+      <td>
+      <p>Oct. 5
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Assignment 1|Assignment 1]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Oct. 15, 14:30
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Assignment 2|Assignment 2]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Nov. 16
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Assignment 3|Assignment 3]]
+      </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+      <p>Dec. 7
+      </p>
+      </td>
+      <td>
+      <p>[[Operating Systems 2026F: Assignment 4|Assignment 4]]
+      </p>
+      </td>
+    </tr>
+ </table>

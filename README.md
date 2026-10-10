@@ -39,6 +39,7 @@ Your ticks and hidden items are stored in `chrome.storage.local` on this compute
 
 - `src/config.js`: course order, colours, labels, and everything taken from the course outlines.
 - `src/sync.js`: what gets pulled from the Brightspace API.
+- `src/coursesite.js`: reads the COMP 3000 course wiki on each sync (tutorial release dates, assignment due dates).
 - `src/grades.js`: the grade math.
 - `src/dashboard.js`: the UI.
 

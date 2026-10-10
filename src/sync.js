@@ -1,7 +1,7 @@
 // Pulls everything the dashboard needs from Brightspace into one plain-JSON snapshot.
 // Only depends on a client with get / getAllObjects / getAllItems (see d2l.js).
 
-import { BASE, COURSE_ORDER, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, MOVE_DEADLINES } from './config.js';
+import { BASE, COURSE_ORDER, COURSE_SITES, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, MOVE_DEADLINES } from './config.js';
 import { LP, LE } from './d2l.js';
 
 const DAY = 86400000;
@@ -209,7 +209,33 @@ export function courseDeadlines(course) {
   const syncedTitles = fromBrightspace.map((d) => d.title);
 
   const graded = (pattern, count = 1) => countMatching(pattern, gradedNames) >= count;
+  // From the course website (see coursesite.js): assignment due dates, and one deadline per
+  // tutorial that isn't graded yet.
+  const { site } = course;
+  const siteCfg = COURSE_SITES[code];
+  const siteDue = (title) => {
+    const n = /^Assignment (\d+)$/.exec(title);
+    return n && site?.assignments.find((a) => a.n === Number(n[1]))?.due;
+  };
+  const tutorials = (siteCfg && site ? site.tutorials : [])
+    .filter((t) => !graded(`^Tutorial ${t.n}$`))
+    .map((t) => {
+      const [y, m, d] = t.available.split('-').map(Number);
+      return {
+        id: `site:${slug(code)}:tutorial-${t.n}`,
+        course: code,
+        title: `Tutorial ${t.n}: get it marked by a TA`,
+        kind: 'tutorial',
+        opens: new Date(y, m - 1, d).toISOString(),
+        due: new Date(y, m - 1, d + siteCfg.tutorialDays, 23, 59).toISOString(),
+        end: null,
+        autoDone: false,
+        url: siteCfg.tutorialUrl.replace('{n}', t.n),
+      };
+    });
+
   const extras = EXTRA_DEADLINES.filter((x) => x.course === code)
+    .map((x) => (siteDue(x.title) ? { ...x, date: siteDue(x.title) } : x))
     .filter((x) => !synced.has(norm(x.title)))
     .filter((x) => !(x.unless && countMatching(x.unless, syncedTitles) > 0))
     .filter((x) => !(x.dropWhenGraded && graded(x.gradedAs, x.gradedCount)))
@@ -238,7 +264,7 @@ export function courseDeadlines(course) {
       ...(x.baseTitle ? { baseTitle: x.baseTitle, notes: x.notes } : {}),
     }));
 
-  return [...fromBrightspace, ...extras].map((d) => moveEarlier(d, code)).map((d) => {
+  return [...fromBrightspace, ...extras, ...tutorials].map((d) => moveEarlier(d, code)).map((d) => {
     const rule = BONUS_DEADLINES.find((b) => b.course === code && new RegExp(b.match, 'i').test(d.title));
     const bonus = rule ? rule.note : d.bonus || /bonus/i.test(d.title) ? 'Bonus marks' : null;
     return bonus ? { ...d, bonus } : { ...d, bonus: undefined };

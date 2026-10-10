@@ -54,6 +54,18 @@ export const PERSONAL_DEADLINES = [
   { title: 'Renew bus pass', date: '2026-10-16', kind: 'errand' },
 ];
 
+// Course websites read on every sync (src/coursesite.js). `url` is the wiki source of the course
+// page. Tutorials become deadlines `tutorialDays` after their release date (the site's rule:
+// "marked within 8 days"), and assignment due dates replace the ones in EXTRA_DEADLINES below.
+export const COURSE_SITES = {
+  'COMP 3000': {
+    url: 'https://homeostasis.scs.carleton.ca/wiki/index.php?title=Operating_Systems_(Fall_2026)&action=raw',
+    year: 2026,
+    tutorialDays: 8,
+    tutorialUrl: 'https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Tutorial_{n}',
+  },
+};
+
 // Due dates for Brightspace items that have none set, matched by course + exact item title.
 // Dates are local time; a bare date means 11:59 PM that day.
 export const DUE_OVERRIDES = {
@@ -93,7 +105,8 @@ export const EXTRA_DEADLINES = [
   { course: 'COMP 2406', title: 'Tutorial 4', date: '2026-10-09T10:00', kind: 'quiz', unless: '^Tutorial 4$', gradedAs: '^Tutorial 4$' },
   { course: 'COMP 2406', title: 'Tutorial 6', date: '2026-10-23T10:00', kind: 'quiz', unless: '^Tutorial 6$', gradedAs: '^Tutorial 6$' },
 
-  // COMP 3000: course website, not Brightspace.
+  // COMP 3000: course website, not Brightspace. These dates are only the fallback: each sync
+  // reads the real ones from the site (COURSE_SITES above), which also supplies the tutorials.
   // Assignment 1 moved Sep 28 -> Sep 30 -> Oct 5 -> Oct 4.
   ...[[1, '2026-10-04'], [2, '2026-10-15T14:30'], [3, '2026-11-16'], [4, '2026-12-07']].map(([n, date]) => ({
     course: 'COMP 3000', title: `Assignment ${n}`, date, kind: 'assignment', gradedAs: `^Assignment ${n}\\b`,

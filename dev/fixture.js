@@ -109,6 +109,11 @@ export const fixture = {
     },
     {
       ou: 486347, code: 'COMP 3000', title: 'Operating Systems', name: 'Merged COMP3000A:COMP3000B', links: links(486347),
+      // What coursesite.js reads from the course wiki.
+      site: {
+        tutorials: [['2026-09-14'], ['2026-09-21'], ['2026-09-28'], ['2026-10-05'], ['2026-11-02'], ['2026-11-09'], ['2026-11-16'], ['2026-11-23']].map(([available], i) => ({ n: i + 1, available })),
+        assignments: [['2026-10-05'], ['2026-10-15T14:30'], ['2026-11-16'], ['2026-12-07']].map(([due], i) => ({ n: i + 1, due })),
+      },
       grades: {
         system: 'Points',
         categories: [

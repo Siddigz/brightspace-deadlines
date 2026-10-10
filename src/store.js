@@ -5,6 +5,7 @@ import { connect, AuthError } from './d2l.js';
 import { syncAll, localDate, courseDeadlines } from './sync.js';
 import { UNIVERSITY_DATES, PERSONAL_DEADLINES } from './config.js';
 import { DEFAULT_PREFS, applyGroups } from './prefs.js';
+import { attachSites } from './coursesite.js';
 
 export { DEFAULT_PREFS, isDone } from './prefs.js';
 
@@ -23,7 +24,8 @@ export function runSync() {
   inFlight ??= (async () => {
     try {
       const client = await connect();
-      const snapshot = await syncAll(client);
+      const { snapshot: previous = null } = await chrome.storage.local.get('snapshot');
+      const snapshot = await attachSites(await syncAll(client), previous);
       await chrome.storage.local.set({ snapshot, syncError: null });
       return { ok: true, snapshot };
     } catch (e) {
