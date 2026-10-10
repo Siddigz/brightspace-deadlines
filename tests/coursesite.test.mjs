@@ -20,9 +20,11 @@ test('COMP 3000 site: tutorials and assignments are read from their tables', () 
   assert.deepEqual(site.tutorials.map((t) => t.n), [1, 2, 3, 4, 5, 6, 7, 8]);
   assert.equal(site.tutorials[3].available, '2026-10-05');
   assert.equal(site.tutorials[4].available, '2026-11-02');
-  assert.deepEqual(site.assignments, [
-    { n: 1, due: '2026-10-05' }, { n: 2, due: '2026-10-15T14:30' }, { n: 3, due: '2026-11-16' }, { n: 4, due: '2026-12-07' },
+  assert.deepEqual(site.assignments.map((x) => [x.n, x.due]), [
+    [1, '2026-10-05'], [2, '2026-10-15T14:30'], [3, '2026-11-16'], [4, '2026-12-07'],
   ]);
+  assert.equal(site.assignments[1].page, 'Operating Systems 2026F: Assignment 2');
+  assert.equal(site.tutorials[4].page, 'Operating Systems 2026F: Tutorial 5');
   assert.deepEqual(parseCourseSite('nothing here', 2026), { tutorials: [], assignments: [] });
 });
 
@@ -76,6 +78,29 @@ test('a course website that could not be read is reported, not silently skipped'
     const later = await attachSites(snap(), ok);
     assert.equal(later.courses[0].site.tutorials.length, 8);
     assert.match(siteProblems(later)[0], /the site answered 503.*last time it worked/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('the wiki is asked which tutorial and assignment pages exist yet', async () => {
+  const { attachSites } = await import('../src/coursesite.js');
+  const realFetch = globalThis.fetch;
+  const posted = ['Operating Systems 2026F: Tutorial 4', 'Operating Systems 2026F: Assignment 1'];
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('api.php')) return new Response(raw);
+    const titles = decodeURIComponent(String(url).split('titles=')[1]).split('|');
+    const pages = Object.fromEntries(titles.map((title, i) => (posted.includes(title) ? [1000 + i, { pageid: 1000 + i, title }] : [-1 - i, { title, missing: '' }])));
+    return new Response(JSON.stringify({ query: { pages } }));
+  };
+  try {
+    const { courses: [c] } = await attachSites({ syncedAt: '2026-10-10T12:00:00.000Z', courses: [{ code: 'COMP 3000', ou: 3, deadlines: [] }] }, null);
+    assert.equal(c.site.tutorials.find((t) => t.n === 4).posted, true);
+    assert.equal(c.site.tutorials.find((t) => t.n === 5).posted, false);
+    assert.equal(c.site.assignments.find((x) => x.n === 2).posted, false);
+    const rows = courseDeadlines(c);
+    assert.equal(rows.find((d) => d.title === 'Assignment 2').live, false);
+    assert.equal(rows.find((d) => d.title.startsWith('Tutorial 4:')).live, true);
   } finally {
     globalThis.fetch = realFetch;
   }

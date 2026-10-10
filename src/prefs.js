@@ -31,6 +31,17 @@ export function applyGroups(deadlines, prefs) {
   });
 }
 
+// What you can work on right now: it exists (`live`), has opened, hasn't closed, and isn't done
+// or hidden. Soonest to close first; grouped rows (a tutorial's two deadlines) show once.
+export function openNow(deadlines, prefs, now = Date.now()) {
+  const seen = new Set();
+  return deadlines
+    .filter((d) => d.live && !prefs.hidden?.[d.id] && !isDone(d, prefs))
+    .filter((d) => (!d.opens || Date.parse(d.opens) <= now) && Date.parse(d.due) > now)
+    .sort((a, b) => Date.parse(a.due) - Date.parse(b.due))
+    .filter((d) => !d.group || (!seen.has(d.group) && seen.add(d.group)));
+}
+
 // Three-way merge of the laptop's and the phone's prefs. `base` is the copy both last agreed on:
 // for each key, whichever side changed it since then wins, so ticks made on either side survive.
 export function mergePrefs(base, local, remote) {

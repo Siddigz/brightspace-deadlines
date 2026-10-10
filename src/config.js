@@ -61,6 +61,7 @@ export const PERSONAL_DEADLINES = [
 export const COURSE_SITES = {
   'COMP 3000': {
     url: 'https://homeostasis.scs.carleton.ca/wiki/index.php?title=Operating_Systems_(Fall_2026)&action=raw',
+    api: 'https://homeostasis.scs.carleton.ca/wiki/api.php', // asked which tutorial/assignment pages exist yet
     year: 2026,
     tutorialDays: 8,
     session: { name: 'B2 tutorial', weekday: 2, time: '18:05' },

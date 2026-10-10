@@ -2,7 +2,8 @@
 const B = 'https://brightspace.carleton.ca';
 const links = (ou) => ({ home: `${B}/d2l/home/${ou}`, grades: `${B}/d2l/lms/grades/my_grades/main.d2l?ou=${ou}`, content: `${B}/d2l/le/content/${ou}/Home` });
 const item = (id, name, categoryId, max, weight, points = null) => ({ id, name, categoryId, max, weight, bonus: false, points, outOf: points == null ? null : max });
-const dl = (id, course, title, kind, due, extra = {}) => ({ id, course, title, kind, opens: null, due, autoDone: false, url: `${B}/d2l/home`, ...extra });
+// `live`: a real quiz or folder in Brightspace (sync.js works this out from real ids).
+const dl = (id, course, title, kind, due, extra = {}) => ({ id, course, title, kind, opens: null, due, autoDone: false, live: true, url: `${B}/d2l/home`, ...extra });
 
 const biolTests = [
   ['2026-09-23', 10], ['2026-09-30'], ['2026-10-07'], ['2026-10-14'], ['2026-10-21'],
@@ -111,8 +112,8 @@ export const fixture = {
       ou: 486347, code: 'COMP 3000', title: 'Operating Systems', name: 'Merged COMP3000A:COMP3000B', links: links(486347),
       // What coursesite.js reads from the course wiki.
       site: {
-        tutorials: [['2026-09-14'], ['2026-09-21'], ['2026-09-28'], ['2026-10-05'], ['2026-11-02'], ['2026-11-09'], ['2026-11-16'], ['2026-11-23']].map(([available], i) => ({ n: i + 1, available })),
-        assignments: [['2026-10-05'], ['2026-10-15T14:30'], ['2026-11-16'], ['2026-12-07']].map(([due], i) => ({ n: i + 1, due })),
+        tutorials: [['2026-09-14'], ['2026-09-21'], ['2026-09-28'], ['2026-10-05'], ['2026-11-02'], ['2026-11-09'], ['2026-11-16'], ['2026-11-23']].map(([available], i) => ({ n: i + 1, available, posted: i < 4 })),
+        assignments: [['2026-10-05'], ['2026-10-15T14:30'], ['2026-11-16'], ['2026-12-07']].map(([due], i) => ({ n: i + 1, due, posted: i < 1 })),
       },
       grades: {
         system: 'Points',

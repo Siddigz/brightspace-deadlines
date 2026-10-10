@@ -1,5 +1,6 @@
 import { COURSE_COLORS, CODE_LABELS, BASE, OUTLINES } from './config.js';
 import { load, savePrefs, isDone, allDeadlines, siteProblems } from './store.js';
+import { openNow } from './prefs.js';
 import { applyOutline, computeCourse, termSheet, letter } from './grades.js';
 
 const DAY = 86400000;
@@ -239,7 +240,7 @@ function renderDeadlines() {
     return `<div class="row ${d.done ? 'done' : ''} ${mark(d)}">
       <input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">
       <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
-      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
+      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
       <span class="when ${soon ? 'soon' : ''}" title="${esc(longFmt.format(new Date(d.t)))}">${esc(whenText(d))}${d.t > now ? ` · ${relative(d.t)}` : ''}</span>
       <button class="icon-btn" data-hide="${esc(d.id)}" title="Hide this item" aria-label="Hide">×</button>
     </div>`;
@@ -297,7 +298,21 @@ function renderDeadlines() {
   if (custom.length) {
     html += `<p class="hint">You've added ${custom.length} deadline${custom.length > 1 ? 's' : ''} yourself. Hide one with × to remove it.</p>`;
   }
-  return html;
+
+  // Side panel: what's open to work on right now.
+  const open = openNow(allDeadlines(state.snapshot, prefs).filter((d) => !state.hiddenCourses.has(d.course)), prefs, now);
+  const side = `<aside class="open-now" aria-label="Open now">
+    <h2>Open now <span class="count">${open.length}</span></h2>
+    ${open.map((d) => {
+      const t = Date.parse(d.due);
+      return `<a class="open-item" href="${esc(d.url)}" target="_blank" style="--c:${color(d.course)}">
+        <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
+        <span class="open-title">${esc(d.title)}</span>
+        <span class="open-when ${t - now < 2 * DAY ? 'soon' : ''}">closes ${esc(longFmt.format(new Date(t)))} · ${relative(t)}</span>
+      </a>`;
+    }).join('') || '<p class="hint">Nothing is open right now.</p>'}
+  </aside>`;
+  return `<div class="with-side"><div class="main-col">${html}</div>${side}</div>`;
 }
 
 function neededChips(r) {
@@ -439,6 +454,7 @@ function render() {
   if (state.view === 'news' || !state.prefs.newsSeen) markNewsSeen();
   renderHeader();
   const view = document.getElementById('view');
+  document.body.classList.toggle('wide', state.view === 'deadlines'); // room for the Open now panel
   view.innerHTML = state.view === 'grades' ? renderGrades() : state.view === 'news' ? renderNews() : renderDeadlines();
 }
 

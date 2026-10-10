@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { mergePrefs, isDone } from '../src/prefs.js';
+import { mergePrefs, isDone, openNow } from '../src/prefs.js';
 
 test('prefs merge keeps ticks made on either side since the last sync', () => {
   const base = { done: { a: true }, hidden: {}, checked: { 'Two Sum': true }, custom: [], newsSeen: ['n1'] };
@@ -37,4 +37,24 @@ test('phone config stand-in covers every config import in shared code', async ()
       for (const n of names.split(',').map((s) => s.trim())) assert.ok(exported.has(n), `${f} imports ${n} from config.js`);
     }
   }
+});
+
+test('Open now: live things that have opened, not closed, not done; a group shows once', () => {
+  const now = Date.parse('2026-10-10T12:00:00Z');
+  const at = (days) => new Date(now + days * 86400000).toISOString();
+  const list = [
+    { id: 'open', live: true, opens: at(-1), due: at(3) },
+    { id: 'no-start', live: true, opens: null, due: at(1) },
+    { id: 'not-yet', live: true, opens: at(1), due: at(5) },
+    { id: 'closed', live: true, opens: at(-9), due: at(-1) },
+    { id: 'done', live: true, opens: at(-1), due: at(2), autoDone: true },
+    { id: 'hidden', live: true, opens: at(-1), due: at(2) },
+    { id: 'config-only', opens: null, due: at(2) },
+    { id: 't4-first', live: true, group: 'g4', opens: at(-5), due: at(-4) },
+    { id: 't4-final', live: true, group: 'g4', opens: at(-5), due: at(4) },
+    { id: 't6-first', live: true, group: 'g6', opens: at(-1), due: at(2) },
+    { id: 't6-final', live: true, group: 'g6', opens: at(-1), due: at(7) },
+  ];
+  const ids = openNow(list, { done: {}, hidden: { hidden: true }, checked: {} }, now).map((d) => d.id);
+  assert.deepEqual(ids, ['no-start', 't6-first', 'open', 't4-final']);
 });

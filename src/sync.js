@@ -196,7 +196,9 @@ async function syncCourse(client, course, now) {
 // so config changes show up as soon as the extension reloads, even without a new sync.
 export function courseDeadlines(course) {
   const { code, ou } = course;
-  const fromBrightspace = (course.deadlines || []).filter((d) => !d.id.startsWith('cfg:')); // older snapshots baked these in
+  // Quizzes and folders that exist in Brightspace are `live`: there is something to open and work on.
+  const fromBrightspace = (course.deadlines || []).filter((d) => !d.id.startsWith('cfg:')) // older snapshots baked these in
+    .map((d) => (/:(quiz|drop):/.test(d.id) ? { ...d, live: true } : d));
   // Names of grade items with a mark, from the sync and straight from the grade sheet.
   const gradedNames = [...new Set([
     ...(course.gradedNames || []),
@@ -213,9 +215,9 @@ export function courseDeadlines(course) {
   // tutorial that isn't graded yet.
   const { site } = course;
   const siteCfg = COURSE_SITES[code];
-  const siteDue = (title) => {
+  const siteAssignment = (title) => {
     const n = /^Assignment (\d+)$/.exec(title);
-    return n && site?.assignments.find((a) => a.n === Number(n[1]))?.due;
+    return n && site?.assignments.find((a) => a.n === Number(n[1]));
   };
   const tutorials = (siteCfg && site ? site.tutorials : [])
     .filter((t) => !graded(`^Tutorial ${t.n}$`))
@@ -238,6 +240,8 @@ export function courseDeadlines(course) {
         autoDone: false,
         url: siteCfg.tutorialUrl.replace('{n}', t.n),
         group: groupId(`tutorial-${t.n}`), // ticking either one ticks both
+        posted: t.posted,
+        live: t.posted === true,
       });
       return [
         row('first', `Tutorial ${t.n}: get it marked at your ${name}`, first),
@@ -246,7 +250,7 @@ export function courseDeadlines(course) {
     });
 
   const extras = EXTRA_DEADLINES.filter((x) => x.course === code)
-    .map((x) => (siteDue(x.title) ? { ...x, date: siteDue(x.title) } : x))
+    .map((x) => (siteAssignment(x.title) ? { ...x, date: siteAssignment(x.title).due, posted: siteAssignment(x.title).posted } : x))
     .filter((x) => !synced.has(norm(x.title)))
     .filter((x) => !(x.unless && countMatching(x.unless, syncedTitles) > 0))
     .filter((x) => !(x.dropWhenGraded && graded(x.gradedAs, x.gradedCount)))
@@ -272,6 +276,7 @@ export function courseDeadlines(course) {
       autoDone: !!x.gradedAs && graded(x.gradedAs, x.gradedCount),
       url: x.url || `${BASE}/d2l/home/${ou}`,
       group: groupId(x.group),
+      ...(x.posted == null ? {} : { posted: x.posted, live: x.posted }),
       ...(x.baseTitle ? { baseTitle: x.baseTitle, notes: x.notes } : {}),
     }));
 

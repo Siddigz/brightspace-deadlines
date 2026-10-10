@@ -28,12 +28,13 @@ function tableRows(raw, heading) {
     .filter((cells) => cells.length >= 2);
 }
 
-// Wiki source of the course page -> { tutorials: [{ n, available }], assignments: [{ n, due }] }.
+// Wiki source of the course page -> { tutorials: [{ n, available, page }], assignments: [{ n, due, page }] }.
+// `page` is the wiki page the row links to.
 export function parseCourseSite(raw, year) {
   const numbered = (heading, word, key) => tableRows(raw, heading).flatMap(([date, what]) => {
-    const n = new RegExp(`\\|\\s*${word}\\s+(\\d+)\\s*\\]\\]`, 'i').exec(what);
+    const link = new RegExp(`\\[\\[([^|\\]]+)\\|\\s*${word}\\s+(\\d+)\\s*\\]\\]`, 'i').exec(what);
     const when = siteDate(date, year);
-    return n && when ? [{ n: Number(n[1]), [key]: when }] : [];
+    return link && when ? [{ n: Number(link[2]), [key]: when, page: link[1].trim() }] : [];
   });
   return {
     tutorials: numbered('Tutorials', 'Tutorial', 'available'),
@@ -54,6 +55,7 @@ export async function attachSites(snapshot, previous) {
       const site = parseCourseSite(await res.text(), cfg.year);
       // An empty result means the page changed shape; don't trust it over what we had.
       const usable = site.tutorials.length || site.assignments.length;
+      if (usable && cfg.api) await markPosted(site, cfg.api);
       course.site = usable ? { ...site, fetchedAt: snapshot.syncedAt } : old;
       course.siteError = usable ? null : 'the page no longer has the tutorial and assignment tables';
     } catch (e) {
@@ -62,6 +64,20 @@ export async function attachSites(snapshot, previous) {
     }
   }
   return snapshot;
+}
+
+// Sets `posted` on each tutorial and assignment: whether its wiki page exists yet (a link on the
+// course page goes up long before the page itself). Left unset if the wiki can't say.
+async function markPosted(site, api) {
+  const all = [...site.tutorials, ...site.assignments];
+  try {
+    const titles = encodeURIComponent(all.map((x) => x.page).join('|'));
+    const res = await fetch(`${api}?action=query&format=json&titles=${titles}`, { cache: 'no-store' });
+    const { query } = await res.json();
+    const renamed = new Map((query.normalized || []).map((x) => [x.from, x.to]));
+    const exists = new Set(Object.values(query.pages).filter((p) => !('missing' in p)).map((p) => p.title));
+    for (const x of all) x.posted = exists.has(renamed.get(x.page) || x.page);
+  } catch {}
 }
 
 // A blocked cross-site request only says "Failed to fetch"; say if it's Chrome's site access.
