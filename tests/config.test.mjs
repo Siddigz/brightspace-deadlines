@@ -42,3 +42,19 @@ test('COMP 3000 grades count all 8 tutorials, not just the 4 Brightspace lists',
   assert.equal(r.totalW, 95); // lecture participation waits for a mark
   assert.equal(r.gradedW, 5); // 2 of 8 tutorials = a quarter of 20%
 });
+
+// build.js fingerprints the worker's files; a file missing from its list could change unnoticed.
+test('the build fingerprint covers every file the background worker loads', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const listed = new Set((await readFile('src/build.js', 'utf8')).match(/'(?:src\/[\w.]+|manifest\.json)'/g).map((s) => s.slice(1, -1)));
+  const seen = new Set();
+  const walk = async (file) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    const src = await readFile(file, 'utf8');
+    for (const [, dep] of src.matchAll(/from '\.\/([\w.]+)'/g)) await walk(`src/${dep}`);
+  };
+  await walk('src/background.js');
+  for (const f of seen) assert.ok(listed.has(f), `${f} is loaded by the worker but not in build.js`);
+  assert.ok(listed.has('manifest.json'));
+});

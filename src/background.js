@@ -1,5 +1,6 @@
 import { load, runSync, isDone, allDeadlines } from './store.js';
 import { upload, syncPhonePrefs } from './phone.js';
+import { codeHash } from './build.js';
 
 const DASHBOARD = chrome.runtime.getURL('dashboard.html');
 const SYNC_EVERY_MIN = 180;
@@ -21,9 +22,26 @@ chrome.action.onClicked.addListener(async () => {
   }
 });
 
+// Note which code this worker is running. Only done when the extension has just been loaded or
+// reloaded (the one time the worker's code is sure to match the files), never on an ordinary
+// wake-up, when Chrome may still be running an older copy. The dashboard compares it (fresh.js).
+let recorded = null;
+const recordBuild = () => (recorded ??= (async () => {
+  const { reopenDashboard } = await chrome.storage.local.get('reopenDashboard');
+  await chrome.storage.local.set({ codeHash: await codeHash() });
+  if (!reopenDashboard) return;
+  // The dashboard reloaded us because we were stale: bring it back and sync with the new code.
+  await chrome.storage.local.remove('reopenDashboard');
+  await chrome.tabs.create({ url: DASHBOARD });
+  await syncAndUpload();
+})());
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create('sync', { periodInMinutes: SYNC_EVERY_MIN, delayInMinutes: 1 });
+  recordBuild();
 });
+// Belt and braces: the first start after a dashboard-requested reload, in case onInstalled doesn't fire.
+chrome.storage.local.get('reopenDashboard').then(({ reopenDashboard }) => reopenDashboard && recordBuild());
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'sync') await syncAndUpload();
