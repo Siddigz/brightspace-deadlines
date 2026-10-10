@@ -208,6 +208,10 @@ function renderDeadlines() {
   if (!state.showDone) items = items.filter((d) => !d.done);
   if (state.bonusOnly) items = items.filter((d) => d.bonus);
 
+  // The next deadline flagged `highlightUntil` (e.g. an interview): everything before it is highlighted.
+  const target = items.filter((d) => d.highlightUntil && d.t > now).sort((a, b) => a.t - b.t)[0];
+  const mark = (d) => (!target ? '' : d.id === target.id ? 'target' : d.t <= target.t ? 'before-target' : '');
+
   const overdue = [];
   const byDay = new Map();
   for (const d of items) {
@@ -232,7 +236,7 @@ function renderDeadlines() {
   const sortItems = (a, b) => a.t - b.t || codeOrder(a.course) - codeOrder(b.course);
   const row = (d) => {
     const soon = !d.done && d.t > now && d.t - now < 2 * DAY;
-    return `<div class="row ${d.done ? 'done' : ''}">
+    return `<div class="row ${d.done ? 'done' : ''} ${mark(d)}">
       <input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">
       <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
       <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
@@ -256,6 +260,9 @@ function renderDeadlines() {
     <label><input type="checkbox" data-opt="bonusOnly" ${state.bonusOnly ? 'checked' : ''}> Only bonus-mark items</label>
     ${Object.keys(prefs.hidden).length ? `<button class="btn small" data-action="unhide">Unhide ${Object.keys(prefs.hidden).length} hidden</button>` : ''}
   </div>`;
+  if (target) {
+    html += `<p class="target-note"><span class="swatch"></span>Highlighted: everything before <b>${esc(target.title)}</b> · ${esc(dayFmt.format(new Date(target.t)))} · ${relative(target.t)}</p>`;
+  }
 
   if (overdue.length) {
     html += `<section class="day overdue"><h2>Overdue</h2><div class="list">${overdue.sort(sortItems).map(row).join('')}</div></section>`;
