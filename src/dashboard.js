@@ -213,7 +213,7 @@ function renderDeadlines() {
   for (const d of items) {
     const over = isSlot(d) && d.end ? Date.parse(d.end) : d.t;
     const isPast = over < now && !(d.allDay && over >= today);
-    // Unfinished checklists (NeetCode days) stay overdue until done or hidden with ×.
+    // Unfinished checklists stay overdue until done or hidden with ×.
     if (isPast && !state.showAll && d.checklist && !d.done) {
       overdue.push(d);
       continue;

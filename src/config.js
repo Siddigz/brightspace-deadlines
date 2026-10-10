@@ -43,44 +43,6 @@ export const UNIVERSITY_DATES = [
   { title: 'Winter exam period', date: '2027-04-11', end: '2027-04-23' },
 ];
 
-// All 117 NeetCode problems, in category order, one day after another from Mon Oct 5.
-// NEETCODE_PACE is [first day, problems per day] from then on: 5 on Oct 5, 2 a day Oct 6-7,
-// then 3 a day from Thu Oct 8, finishing Thu Nov 12. Trees are done by Oct 18, graphs by Oct 25.
-// Miss a day? Shift everything back rather than doubling up.
-const NEETCODE_PACE = [['2026-10-05', 5], ['2026-10-06', 2], ['2026-10-08', 3]];
-const NEETCODE = [
-    'Contains Duplicate, Valid Anagram, Two Sum, Group Anagrams, Top K Frequent Elements',
-    'Encode and Decode Strings, Product of Array Except Self, Valid Sudoku, Longest Consecutive Sequence, Valid Palindrome',
-    'Two Sum II, 3Sum, Container With Most Water, Best Time to Buy and Sell Stock, Longest Substring Without Repeating Characters',
-    'Longest Repeating Character Replacement, Permutation in String, Valid Parentheses, Min Stack, Evaluate Reverse Polish Notation',
-    'Daily Temperatures, Car Fleet, Binary Search, Search a 2D Matrix, Koko Eating Bananas',
-    'Find Minimum in Rotated Sorted Array, Search in Rotated Sorted Array, Time Based Key-Value Store, Invert Binary Tree, Maximum Depth of Binary Tree',
-    'Diameter of Binary Tree, Balanced Binary Tree, Same Tree, Subtree of Another Tree, Lowest Common Ancestor of a BST',
-    'Binary Tree Level Order Traversal, Binary Tree Right Side View, Count Good Nodes in Binary Tree, Validate Binary Search Tree, Kth Smallest Element in a BST',
-    'Construct Binary Tree from Preorder and Inorder Traversal, Kth Largest Element in a Stream, Last Stone Weight, K Closest Points to Origin, Kth Largest Element in an Array',
-    'Task Scheduler, Design Twitter, Number of Islands, Max Area of Island, Clone Graph',
-    'Walls and Gates, Rotting Oranges, Pacific Atlantic Water Flow, Surrounded Regions, Course Schedule',
-    'Course Schedule II, Graph Valid Tree, Number of Connected Components, Redundant Connection, Network Delay Time',
-    'Min Cost to Connect All Points, Cheapest Flights Within K Stops, Reverse Linked List, Merge Two Sorted Lists, Linked List Cycle',
-    'Reorder List, Remove Nth Node From End of List, Copy List with Random Pointer, Add Two Numbers, Find the Duplicate Number',
-    'LRU Cache, Meeting Rooms, Merge Intervals, Insert Interval, Non-overlapping Intervals',
-    'Meeting Rooms II, Subsets, Combination Sum, Combination Sum II, Permutations',
-    'Subsets II, Generate Parentheses, Word Search, Palindrome Partitioning, Letter Combinations of a Phone Number',
-    'Climbing Stairs, Min Cost Climbing Stairs, House Robber, House Robber II, Longest Palindromic Substring',
-    'Palindromic Substrings, Decode Ways, Coin Change, Maximum Product Subarray, Word Break',
-    'Longest Increasing Subsequence, Partition Equal Subset Sum, Implement Trie, Design Add and Search Words, Maximum Subarray',
-    'Jump Game, Jump Game II, Gas Station, Hand of Straights, Merge Triplets to Form Target Triplet',
-    'Partition Labels, Valid Parenthesis String, Unique Paths, Longest Common Subsequence, Best Time to Buy and Sell Stock with Cooldown',
-    'Coin Change II, Target Sum, Interleaving String, Edit Distance, Rotate Image',
-    'Spiral Matrix, Set Matrix Zeroes',
-].join(', ').split(', ');
-const NEETCODE_DAYS = [];
-for (let i = 0, d = new Date(2026, 9, 5); i < NEETCODE.length; d.setDate(d.getDate() + 1)) {
-  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const [, perDay] = NEETCODE_PACE.findLast(([from]) => from <= date);
-  NEETCODE_DAYS.push({ date, checklist: NEETCODE.slice(i, (i += perDay)) });
-}
-
 // Your own deadlines, outside any course. They show under "Personal" and can be ticked off.
 // `date` is local time; a bare date means 11:59 PM that day. `end` makes it a time slot.
 export const PERSONAL_DEADLINES = [

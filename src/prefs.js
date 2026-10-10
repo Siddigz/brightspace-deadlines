@@ -4,7 +4,7 @@
 export const DEFAULT_PREFS = {
   done: {}, // deadline id -> true/false (overrides auto-detected state)
   hidden: {}, // deadline id -> true
-  checked: {}, // checklist item (e.g. a NeetCode problem) -> true
+  checked: {}, // checklist item -> true
   custom: [], // [{ id, course, title, due, allDay, kind }]
   newsSeen: null, // announcement ids you've seen; null until the first sync with announcements
 };
