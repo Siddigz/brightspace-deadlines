@@ -119,6 +119,7 @@ h2 { font-size: 15px; margin: 0; }
   padding: 9px 12px; border-top: 1px solid var(--border);
 }
 .row > input { grid-area: cb; }
+.row > .no-check { grid-area: cb; width: 16px; }
 .row > .tag { grid-area: tag; }
 .row > .title { grid-area: title; }
 .row > .when { grid-area: when; }

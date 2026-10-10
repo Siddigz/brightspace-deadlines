@@ -239,7 +239,7 @@ function renderDeadlines() {
     const soon = !d.done && d.t > now && d.t - now < 2 * DAY;
     return `<div class="row ${d.done ? 'done' : ''} ${mark(d)}">
       ${d.locked
-    ? '<input type="checkbox" disabled title="Locked: this one cannot be ticked off or removed" aria-label="Locked">'
+    ? '<span class="no-check"></span>' // locked: nothing to tick, but keep the column so titles line up
     : `<input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">`}
       <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
       <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
