@@ -140,3 +140,23 @@ test('a submission ticks the deadline for that work, even when the Brightspace f
   assert.equal(mini(7).autoDone, false);
   assert.equal(mini(5).autoDone, true); // Brightspace's own dated folder
 });
+
+test('each sync records which quizzes Brightspace is showing, so a lesson quiz reads locked or unlocked', async () => {
+  const quiz = (id, name) => ({ QuizId: id, Name: name, IsActive: true, DueDate: null, StartDate: null, EndDate: null, GradeItemId: null });
+  const sync = async (quizzes) => {
+    const client = fakeClient({ name: 'Crosslist CLCV2105A:PHIL2005A [31033:33778] Ancient Phil:Search for Wisdom (LEC) Fall 2026', quizzes });
+    const { courses: [course] } = await syncAll(client, Date.parse('2026-10-13T12:00:00Z'));
+    return courseDeadlines(course).find((d) => d.title === 'Lesson 6: Quiz 1 and Quiz 2');
+  };
+  // Lectures not watched: Brightspace doesn't list Lesson 6's quizzes.
+  const locked = await sync([quiz(51, 'Lesson 5: Quiz 1 (5 questions)')]);
+  assert.equal(locked.openTitle, 'Lesson 6: Quiz 1');
+  assert.equal(locked.unlocked, false);
+  assert.equal(locked.openUrl, undefined);
+  // Watched: the quiz shows up (still without dates), and the panel links straight to it.
+  const open = await sync([quiz(51, 'Lesson 5: Quiz 1 (5 questions)'), quiz(61, 'Lesson 6: Quiz 1 (5 questions)')]);
+  assert.equal(open.unlocked, true);
+  assert.match(open.openUrl, /quiz_summary\.d2l\?qi=61&ou=1$/);
+  // A snapshot from before quizzes were recorded can't say either way.
+  assert.equal(courseDeadlines({ code: 'CLCV 2105', ou: 4, deadlines: [] }).find((d) => d.title === 'Lesson 6: Quiz 1 and Quiz 2').unlocked, undefined);
+});

@@ -188,6 +188,9 @@ async function syncCourse(client, course, now) {
     // Names of grade items that have a mark, so config deadlines can tick themselves off.
     gradedNames: objs.filter((o) => gradeById.has(String(o.Id))).map((o) => o.Name.trim()),
     submittedNames,
+    // Every quiz Brightspace shows you right now, dated or not. Quizzes behind a release
+    // condition (e.g. "watch the lecture first") only appear here once you've met it.
+    visibleQuizzes: quizzes.filter((q) => q.IsActive).map((q) => ({ id: q.QuizId, name: q.Name.trim() })),
     news: (news || [])
       .filter((n) => !n.IsHidden)
       .map((n) => ({ id: `${ou}:news:${n.Id}`, title: n.Title, date: n.StartDate, body: stripHtml(n.Body?.Html).slice(0, 1200) }))
@@ -257,6 +260,19 @@ export function courseDeadlines(course) {
       ];
     });
 
+  // For work done in steps (see `openSteps`): the step to do next, and whether Brightspace is
+  // showing that quiz yet. `unlocked` stays unset for snapshots from before quizzes were recorded.
+  const nextStep = (x) => {
+    const step = x.openSteps?.find((s) => !graded(s.gradedAs));
+    if (!step) return {};
+    const quiz = course.visibleQuizzes?.find((q) => new RegExp(step.gradedAs, 'i').test(q.name));
+    return {
+      openTitle: step.title,
+      ...(course.visibleQuizzes ? { unlocked: !!quiz } : {}),
+      ...(quiz ? { openUrl: `${BASE}/d2l/lms/quizzing/user/quiz_summary.d2l?qi=${quiz.id}&ou=${ou}` } : {}),
+    };
+  };
+
   const extras = EXTRA_DEADLINES.filter((x) => x.course === code)
     .map((x) => {
       const a = siteAssignment(x.title);
@@ -289,7 +305,7 @@ export function courseDeadlines(course) {
       url: x.url || `${BASE}/d2l/home/${ou}`,
       group: groupId(x.group),
       ...(x.posted == null ? {} : { posted: x.posted, live: x.posted }),
-      ...(x.openWeekOf ? { live: true, openFrom: weekStart(localDate(x.date)), openTitle: x.openSteps?.find((s) => !graded(s.gradedAs))?.title } : {}),
+      ...(x.openWeekOf ? { live: true, openFrom: weekStart(localDate(x.date)), ...nextStep(x) } : {}),
       ...(x.baseTitle ? { baseTitle: x.baseTitle, notes: x.notes } : {}),
     }));
 

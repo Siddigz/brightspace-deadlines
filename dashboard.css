@@ -227,6 +227,8 @@ body.wide { max-width: 1280px; }
 .open-title { font-weight: 600; overflow-wrap: anywhere; }
 .open-when { font-size: 12px; color: var(--muted); }
 .open-when.soon { color: var(--warn); font-weight: 600; }
+.open-lock { font-size: 12px; color: var(--muted); }
+.open-lock.yes { color: var(--good); font-weight: 600; }
 @media (max-width: 900px) {
   .with-side { grid-template-columns: minmax(0, 1fr); }
   .open-now { position: static; order: -1; max-height: 240px; }

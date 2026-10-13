@@ -140,9 +140,10 @@ export const EXTRA_DEADLINES = [
     {
       course: 'CLCV 2105', title: `Lesson ${i + 1}: Quiz 1 and Quiz 2`, date, kind: 'quiz',
       gradedAs: `^Lesson ${i + 1}: Quiz [12]\\b`, gradedCount: 2,
-      // Brightspace keeps the quizzes locked until you've watched the lectures, so it can't say
-      // they're open. Count them as open from the Monday of the week they're due: Quiz 1 first,
-      // then Quiz 2 once Quiz 1 has a mark.
+      // Brightspace hides each quiz until you've watched its lecture, so it can't say they're
+      // open. Count them as open from the Monday of the week they're due: Quiz 1 first, then
+      // Quiz 2 once Quiz 1 has a mark. Each sync checks whether Brightspace is showing the quiz
+      // yet, and "Open now" says locked or unlocked.
       openWeekOf: true,
       openSteps: [1, 2].map((q) => ({ title: `Lesson ${i + 1}: Quiz ${q}`, gradedAs: `^Lesson ${i + 1}: Quiz ${q}\\b` })),
     },
