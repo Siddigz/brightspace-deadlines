@@ -131,16 +131,20 @@ async function syncCourse(client, course, now) {
     });
   }
 
+  // Folders you've handed something in to, dated or not, so config deadlines for the same work
+  // can tick themselves off (a folder with no due date isn't a deadline here, but still counts).
+  const submittedNames = [];
   for (const f of folders || []) {
     const override = overrides[f.Name.trim()];
     const due = f.DueDate || (override && localDate(override)) || f.Availability?.EndDate;
-    if (!due) continue;
-    // Only ask about submissions for folders that are still relevant.
+    // Only ask about submissions for folders that are still relevant (undated ones always are).
     let submitted = false;
-    if (Date.parse(due) > now - 21 * DAY) {
+    if (!due || Date.parse(due) > now - 21 * DAY) {
       const subs = await client.get(`${LE}/${ou}/dropbox/folders/${f.Id}/submissions/mysubmissions/`);
       submitted = (subs || []).some((s) => (s.Submissions || []).length > 0);
     }
+    if (submitted) submittedNames.push(f.Name.trim());
+    if (!due) continue;
     deadlines.push({
       id: `${ou}:drop:${f.Id}`,
       course: code,
@@ -183,6 +187,7 @@ async function syncCourse(client, course, now) {
     deadlines,
     // Names of grade items that have a mark, so config deadlines can tick themselves off.
     gradedNames: objs.filter((o) => gradeById.has(String(o.Id))).map((o) => o.Name.trim()),
+    submittedNames,
     news: (news || [])
       .filter((n) => !n.IsHidden)
       .map((n) => ({ id: `${ou}:news:${n.Id}`, title: n.Title, date: n.StartDate, body: stripHtml(n.Body?.Html).slice(0, 1200) }))
@@ -199,10 +204,13 @@ export function courseDeadlines(course) {
   // Quizzes and folders that exist in Brightspace are `live`: there is something to open and work on.
   const fromBrightspace = (course.deadlines || []).filter((d) => !d.id.startsWith('cfg:')) // older snapshots baked these in
     .map((d) => (/:(quiz|drop):/.test(d.id) ? { ...d, live: true } : d));
-  // Names of grade items with a mark, from the sync and straight from the grade sheet.
+  // Names of work that's finished as far as Brightspace knows: grade items with a mark (from the
+  // sync and straight from the grade sheet) and folders you've submitted to.
   const gradedNames = [...new Set([
     ...(course.gradedNames || []),
     ...(course.grades?.items || []).filter((it) => it.points != null).map((it) => it.name),
+    ...(course.submittedNames || []),
+    ...(course.deadlines || []).filter((d) => d.autoDone && /:drop:/.test(d.id)).map((d) => d.title),
   ])];
   const groupId = (g) => (g ? `group:${slug(code)}:${slug(g)}` : undefined);
   const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');

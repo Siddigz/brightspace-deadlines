@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { syncAll, courseDeadlines } from '../src/sync.js';
 
 // A tiny fake Brightspace: one pinned course with the given gradebook, quizzes and folders.
-function fakeClient({ name, grades = [], values = [], quizzes = [], folders = [] }) {
+function fakeClient({ name, grades = [], values = [], quizzes = [], folders = [], submittedTo = [] }) {
+  const submissions = (id) => (submittedTo.includes(id) ? [{ Submissions: [{ Id: 1 }] }] : []);
   const routes = [
     [/enrollments\/myenrollments/, { PagingInfo: { HasMoreItems: false }, Items: [{ OrgUnit: { Id: 1, Name: name }, Access: { CanAccess: true, IsActive: true }, PinDate: '2026-09-28' }] }],
     [/grades\/setup/, { GradingSystem: 'Points' }],
@@ -11,12 +12,15 @@ function fakeClient({ name, grades = [], values = [], quizzes = [], folders = []
     [/grades\/values\/myGradeValues/, values],
     [/grades\/$/, grades],
     [/quizzes\//, { Objects: quizzes, Next: null }],
-    [/dropbox\/folders\/\d+\/submissions/, []],
+    [/dropbox\/folders\/(\d+)\/submissions/, (m) => submissions(Number(m[1]))],
     [/dropbox\/folders\//, folders],
     [/calendar/, []],
     [/news/, []],
   ];
-  const get = async (path) => routes.find(([re]) => re.test(path))?.[1] ?? null;
+  const get = async (path) => {
+    const route = routes.find(([re]) => re.test(path));
+    return typeof route?.[1] === 'function' ? route[1](route[0].exec(path)) : route?.[1] ?? null;
+  };
   return { me: null, get, getAllObjects: async (p) => (await get(p))?.Objects ?? (await get(p)), getAllItems: async (p) => (await get(p)).Items };
 }
 
@@ -116,4 +120,23 @@ test('CLCV 2105 quizzes count as open from the Monday of their week: Quiz 1, the
   assert.deepEqual(open(['Lesson 6: Quiz 1 (5 questions)'], new Date(2026, 9, 14)), ['Lesson 6: Quiz 2']);
   assert.deepEqual(open(['Lesson 6: Quiz 1 (5 questions)', 'Lesson 6: Quiz 2 (5 questions)'], new Date(2026, 9, 14)), []);
   assert.deepEqual(open([], new Date(2026, 9, 19, 0, 1)), ['Lesson 7: Quiz 1']);
+});
+
+test('a submission ticks the deadline for that work, even when the Brightspace folder has no due date', async () => {
+  const client = fakeClient({
+    name: 'Crosslist CLCV2105A:PHIL2005A [31033:33778] Ancient Phil:Search for Wisdom (LEC) Fall 2026',
+    folders: [
+      { Id: 6, Name: 'Lesson 6: Mini-assignment submission', DueDate: null }, // no date yet, submitted
+      { Id: 7, Name: 'Lesson 7: Mini-assignment submission', DueDate: null }, // no date, nothing handed in
+      { Id: 5, Name: 'Lesson 5: Mini-assignment submission', DueDate: '2026-10-12T03:59:00.000Z' },
+    ],
+    submittedTo: [6, 5],
+  });
+  const { courses: [course] } = await syncAll(client, Date.parse('2026-10-13T12:00:00Z'));
+  assert.deepEqual(course.submittedNames.sort(), ['Lesson 5: Mini-assignment submission', 'Lesson 6: Mini-assignment submission']);
+  const list = courseDeadlines(course);
+  const mini = (n) => list.find((d) => d.title.startsWith(`Lesson ${n}: Mini-assignment`));
+  assert.equal(mini(6).autoDone, true); // the outline's row, ticked by the undated folder's submission
+  assert.equal(mini(7).autoDone, false);
+  assert.equal(mini(5).autoDone, true); // Brightspace's own dated folder
 });
