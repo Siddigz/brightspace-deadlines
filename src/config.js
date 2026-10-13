@@ -123,7 +123,8 @@ export const EXTRA_DEADLINES = [
     url: 'https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Assignment_2',
   },
   { course: 'COMP 3000', title: 'Optional Assignment 2 Q&A (virtual, recorded; time TBA)', date: '2026-10-19', end: '2026-10-19', kind: 'event', allDay: true },
-  // Section B: in class Wed Oct 21 (section A writes Tue Oct 20); confirmed in the Oct 10 announcement.
+  // Section B: in class Wed Oct 21; section A writes Tue Oct 20. Outline:
+  // "Oct. 20th & 21st during class"; confirmed in the Oct 10 announcement.
   { course: 'COMP 3000', title: 'Midterm, in class (closed book)', date: '2026-10-21T08:35', end: '2026-10-21T09:55', kind: 'test' },
   { course: 'COMP 3000', title: 'Final exam (room TBA)', date: '2026-12-17T09:00', end: '2026-12-17T11:30', kind: 'test' },
 
