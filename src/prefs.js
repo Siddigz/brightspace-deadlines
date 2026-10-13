@@ -42,6 +42,7 @@ export function openNow(deadlines, prefs, now = Date.now()) {
   return deadlines
     .filter((d) => d.live && !prefs.hidden?.[d.id] && !isDone(d, prefs))
     .filter((d) => (!d.opens || Date.parse(d.opens) <= now) && Date.parse(d.realDue || d.due) > now)
+    .filter((d) => !d.openFrom || Date.parse(d.openFrom) <= now) // counted as open from then (see openWeekOf)
     .filter((d) => !mustWait(d))
     .sort((a, b) => Date.parse(a.due) - Date.parse(b.due))
     .filter((d) => !d.group || (!seen.has(d.group) && seen.add(d.group)));

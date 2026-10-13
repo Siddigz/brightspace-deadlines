@@ -102,3 +102,18 @@ test('CLCV 2305 Brightspace items are marked one-at-a-time; other courses are no
   assert.equal(rows('CLCV 2305').find((d) => d.title === 'MID-TERM').oneAtATime, undefined); // exams don't queue
   assert.equal(rows('CLCV 2105').find((d) => d.title === 'ANCIENT SOURCE').oneAtATime, undefined);
 });
+
+test('CLCV 2105 quizzes count as open from the Monday of their week: Quiz 1, then Quiz 2', async () => {
+  const { openNow } = await import('../src/prefs.js');
+  const item = (name) => ({ id: name, name, points: 4, outOf: 5 });
+  const open = (graded, now) => openNow(
+    courseDeadlines({ code: 'CLCV 2105', ou: 4, deadlines: [], grades: { items: graded.map(item) } }),
+    { done: {}, hidden: {}, checked: {} }, now.getTime(),
+  ).map((d) => d.openTitle || d.title);
+  // Lesson 6 is due Sun Oct 18, so its week starts Mon Oct 12; Lesson 7's starts Mon Oct 19.
+  assert.deepEqual(open([], new Date(2026, 9, 11, 22)), ['Lesson 5: Quiz 1']); // Sunday night: still last week's
+  assert.deepEqual(open([], new Date(2026, 9, 12, 8)), ['Lesson 6: Quiz 1']);
+  assert.deepEqual(open(['Lesson 6: Quiz 1 (5 questions)'], new Date(2026, 9, 14)), ['Lesson 6: Quiz 2']);
+  assert.deepEqual(open(['Lesson 6: Quiz 1 (5 questions)', 'Lesson 6: Quiz 2 (5 questions)'], new Date(2026, 9, 14)), []);
+  assert.deepEqual(open([], new Date(2026, 9, 19, 0, 1)), ['Lesson 7: Quiz 1']);
+});

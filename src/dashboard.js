@@ -309,7 +309,7 @@ function renderDeadlines() {
       const t = Date.parse(d.realDue || d.due);
       return `<a class="open-item" href="${esc(d.url)}" target="_blank" style="--c:${color(d.course)}">
         <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
-        <span class="open-title">${esc(d.title)}</span>
+        <span class="open-title">${esc(d.openTitle || d.title)}</span>
         <span class="open-when ${t - now < 2 * DAY ? 'soon' : ''}">closes ${esc(longFmt.format(new Date(t)))} · ${relative(t)}</span>
       </a>`;
     }).join('') || '<p class="hint">Nothing is open right now.</p>'}

@@ -281,6 +281,7 @@ export function courseDeadlines(course) {
       url: x.url || `${BASE}/d2l/home/${ou}`,
       group: groupId(x.group),
       ...(x.posted == null ? {} : { posted: x.posted, live: x.posted }),
+      ...(x.openWeekOf ? { live: true, openFrom: weekStart(localDate(x.date)), openTitle: x.openSteps?.find((s) => !graded(s.gradedAs))?.title } : {}),
       ...(x.baseTitle ? { baseTitle: x.baseTitle, notes: x.notes } : {}),
     }));
 
@@ -298,6 +299,12 @@ export function courseDeadlines(course) {
     const bonus = rule ? rule.note : d.bonus || /bonus/i.test(d.title) ? 'Bonus marks' : null;
     return bonus ? { ...d, bonus } : { ...d, bonus: undefined };
   });
+}
+
+// Monday 00:00 (local) of the week containing an ISO date; weeks run Monday to Sunday.
+function weekStart(iso) {
+  const d = new Date(iso);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7)).toISOString();
 }
 
 // Applies DUE_NIGHT_BEFORE: a hand-in due partway through a day moves to 11:59 PM the night

@@ -96,6 +96,8 @@ export const DUE_NIGHT_BEFORE = true;
 // Entries (and notes) sharing a `group` are about the same thing: ticking one ticks them all.
 // `doneWith` also marks it done once the Brightspace item matching that pattern is submitted or graded.
 // `keepDate` stops a course website's date (COURSE_SITES) from replacing the one written here.
+// `openWeekOf` lists it under "Open now" from the Monday of the week it's due, for work Brightspace
+// can't report as open. `openSteps` ([{ title, gradedAs }]) names the part to do next there.
 export const EXTRA_DEADLINES = [
   // COMP 2406: in-person tests, Fridays 10:00-11:30 in the tutorial room.
   { course: 'COMP 2406', title: 'Test 1 (HTML + CSS), in person', date: '2026-09-25T10:00', end: '2026-09-25T11:30', kind: 'test' },
@@ -138,6 +140,11 @@ export const EXTRA_DEADLINES = [
     {
       course: 'CLCV 2105', title: `Lesson ${i + 1}: Quiz 1 and Quiz 2`, date, kind: 'quiz',
       gradedAs: `^Lesson ${i + 1}: Quiz [12]\\b`, gradedCount: 2,
+      // Brightspace keeps the quizzes locked until you've watched the lectures, so it can't say
+      // they're open. Count them as open from the Monday of the week they're due: Quiz 1 first,
+      // then Quiz 2 once Quiz 1 has a mark.
+      openWeekOf: true,
+      openSteps: [1, 2].map((q) => ({ title: `Lesson ${i + 1}: Quiz ${q}`, gradedAs: `^Lesson ${i + 1}: Quiz ${q}\\b` })),
     },
     {
       course: 'CLCV 2105', title: `Lesson ${i + 1}: Mini-assignment (optional: max 7 per term, best 6 count)`, date, kind: 'assignment',
