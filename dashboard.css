@@ -161,10 +161,16 @@ input.w { width: 70px; }
 .score .big { font-size: 28px; font-weight: 700; line-height: 1.1; }
 .score .letter { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 4px; }
 .bar { display: flex; height: 8px; background: var(--surface-2); border-radius: 999px; margin: 12px 0 4px; overflow: hidden; }
-.bar > span { height: 100%; cursor: help; }
+.bar > span { height: 100%; }
 .bar > .banked { background: var(--c); }
 .bar > .lost { background: color-mix(in srgb, var(--c) 35%, transparent); }
 .bar > span:hover { filter: brightness(1.15); }
+.tip {
+  position: fixed; z-index: 50; pointer-events: none; max-width: 280px;
+  padding: 5px 8px; border-radius: 6px; font-size: 12px;
+  background: var(--text); color: var(--surface); box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+}
+.tip[hidden] { display: none; }
 .stats { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--muted); font-size: 12px; }
 .stats b { color: var(--text); font-weight: 600; }
 .needed { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }

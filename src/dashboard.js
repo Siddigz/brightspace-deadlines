@@ -445,7 +445,7 @@ function gradeBar(r, of) {
   const graded = Math.min(100, r.coverage * 100);
   const banked = Math.min(graded, r.floor ?? 0);
   const lost = graded - banked;
-  const part = (cls, w, tip) => (w > 0 ? `<span class="${cls}" style="width:${w}%" title="${esc(tip)}"></span>` : '');
+  const part = (cls, w, tip) => (w > 0 ? `<span class="${cls}" style="width:${w}%" data-tip="${esc(tip)}" aria-label="${esc(tip)}"></span>` : '');
   return `<div class="bar">${
     part('banked', banked, `Banked: ${fmt1(banked)}% of the ${of}, out of ${fmt1(graded)}% graded`)}${
     part('lost', lost, `Lost: ${fmt1(lost)}% (graded ${fmt1(graded)}% − banked ${fmt1(banked)}%)`)}${
@@ -496,6 +496,23 @@ document.getElementById('course-filter').addEventListener('click', (e) => {
 });
 
 const view = document.getElementById('view');
+
+// Hover text for `data-tip` (the grades bar), shown right away and above the bar's clipping.
+const tip = document.createElement('div');
+tip.className = 'tip';
+tip.hidden = true;
+document.body.append(tip);
+view.addEventListener('pointermove', (e) => {
+  const t = e.target.closest('[data-tip]');
+  if (!t) { tip.hidden = true; return; }
+  tip.textContent = t.dataset.tip;
+  tip.hidden = false;
+  const box = t.getBoundingClientRect();
+  tip.style.left = `${Math.max(8, Math.min(e.clientX - tip.offsetWidth / 2, innerWidth - tip.offsetWidth - 8))}px`;
+  tip.style.top = `${box.top - tip.offsetHeight - 6}px`;
+});
+view.addEventListener('pointerleave', () => { tip.hidden = true; });
+addEventListener('scroll', () => { tip.hidden = true; }, { passive: true });
 
 view.addEventListener('click', (e) => {
   const t = e.target.closest('button');
