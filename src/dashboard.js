@@ -419,7 +419,7 @@ function renderGrades() {
           <div class="sub">${term ? `${esc(term)} average` : 'current average'}</div>
         </div>
       </div>
-      ${gradeBar(r, term ? 'term' : 'course')}
+      ${gradeBar(r)}
       <div class="stats">
         <span><b class="num">${fmt1(r.coverage * 100)}%</b> of the ${term ? 'term' : 'course'} graded</span>
         ${term ? `<span>${esc(term)} is worth <b class="num">${fmt1(termShare)}%</b> of your final grade</span>` : ''}
@@ -441,15 +441,15 @@ function renderGrades() {
 
 // Graded share of the course, split into what you banked and what you lost on it; the rest is
 // still to come. Hover a part to see its size.
-function gradeBar(r, of) {
+function gradeBar(r) {
   const graded = Math.min(100, r.coverage * 100);
   const banked = Math.min(graded, r.floor ?? 0);
   const lost = graded - banked;
   const part = (cls, w, tip) => (w > 0 ? `<span class="${cls}" style="width:${w}%" data-tip="${esc(tip)}" aria-label="${esc(tip)}"></span>` : '');
   return `<div class="bar">${
-    part('banked', banked, `Banked: ${fmt1(banked)}% of the ${of}, out of ${fmt1(graded)}% graded`)}${
-    part('lost', lost, `Lost: ${fmt1(lost)}% (graded ${fmt1(graded)}% − banked ${fmt1(banked)}%)`)}${
-    part('rest', 100 - graded, `Not graded yet: ${fmt1(100 - graded)}% of the ${of}`)}</div>`;
+    part('banked', banked, `Banked ${fmt1(banked)}%`)}${
+    part('lost', lost, `Lost ${fmt1(lost)}%`)}${
+    part('rest', 100 - graded, `Not graded yet ${fmt1(100 - graded)}%`)}</div>`;
 }
 
 function renderNews() {
