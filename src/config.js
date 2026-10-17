@@ -185,8 +185,8 @@ export const OUTLINES = {
   },
   'CGSC 2001': {
     extra: [
-      { name: 'Midterm 1', weight: 33, unless: '^Midterm 1$' },
-      { name: 'Midterm 2', weight: 33, unless: '^Midterm 2$' },
+      { name: 'Midterm 1', weight: 33, unless: '^Midterm[ _]1$' },
+      { name: 'Midterm 2', weight: 33, unless: '^Midterm[ _]2$' },
       { name: 'Final', weight: 34, unless: '^(Final|Take Home Exam)$' },
     ],
     rules: ['Midterm 1 33%, Midterm 2 33%, Final (take-home) 34%.'],

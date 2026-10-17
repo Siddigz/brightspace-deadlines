@@ -90,6 +90,12 @@ test('CGSC outline items step aside once Brightspace has them', () => {
     OUTLINES['CGSC 2001'],
   );
   assert.equal(sheet.items.filter((it) => /Midterm 1/.test(it.name)).length, 1);
+  // Brightspace names it "Midterm_1".
+  const underscored = applyOutline(
+    { system: 'Weighted', categories: [], items: [{ id: '9', name: 'Midterm_1', categoryId: null, max: 51, weight: 33, points: 43, outOf: 51 }] },
+    OUTLINES['CGSC 2001'],
+  );
+  assert.equal(underscored.items.filter((it) => /Midterm[ _]1/.test(it.name)).length, 1);
 });
 
 test('nothing is dropped before there are more marks than count', () => {
