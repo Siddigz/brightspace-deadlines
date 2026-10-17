@@ -160,8 +160,11 @@ input.w { width: 70px; }
 .score { text-align: right; }
 .score .big { font-size: 28px; font-weight: 700; line-height: 1.1; }
 .score .letter { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 4px; }
-.bar { height: 6px; background: var(--surface-2); border-radius: 999px; margin: 12px 0 4px; overflow: hidden; }
-.bar > span { display: block; height: 100%; background: var(--c); border-radius: inherit; }
+.bar { display: flex; height: 8px; background: var(--surface-2); border-radius: 999px; margin: 12px 0 4px; overflow: hidden; }
+.bar > span { height: 100%; cursor: help; }
+.bar > .banked { background: var(--c); }
+.bar > .lost { background: color-mix(in srgb, var(--c) 35%, transparent); }
+.bar > span:hover { filter: brightness(1.15); }
 .stats { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--muted); font-size: 12px; }
 .stats b { color: var(--text); font-weight: 600; }
 .needed { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
