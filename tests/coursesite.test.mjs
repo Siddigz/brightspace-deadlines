@@ -109,16 +109,19 @@ test('the wiki is asked which tutorial and assignment pages exist yet', async ()
   }
 });
 
-test('COMP 3000 Assignment 2 keeps its announced date; the late cutoff ticks with the Brightspace submission', () => {
+test('COMP 3000 Assignment 2 keeps its announced date, over the site and the Brightspace folder', () => {
   const site = { tutorials: [], assignments: [{ n: 2, due: '2026-10-15T14:30', posted: true }] };
-  const rows = (deadlines) => courseDeadlines({ code: 'COMP 3000', ou: 3, deadlines, site });
-  const a2 = rows([]).find((d) => d.title === 'Assignment 2');
-  assert.equal(new Date(a2.due).toString(), new Date(2026, 9, 16, 23, 59).toString()); // not the site's Oct 15
+  const rows = (deadlines) => courseDeadlines({ code: 'COMP 3000', ou: 3, deadlines, site }).filter((d) => /^Assignment 2\b/.test(d.title));
+  const sunday = new Date(2026, 9, 18, 23, 59).toString();
+  const [a2] = rows([]);
+  assert.equal(new Date(a2.due).toString(), sunday); // not the site's Oct 15
   assert.equal(a2.live, true);
-  const late = (deadlines) => rows(deadlines).find((d) => d.title.startsWith('Assignment 2: last chance'));
-  assert.equal(new Date(late([]).due).toString(), new Date(2026, 9, 17, 23, 59).toString());
-  const folder = (autoDone) => [{ id: '3:drop:9', title: 'Assignment 2', kind: 'assignment', due: new Date(2026, 9, 16, 23, 59).toISOString(), autoDone }];
-  assert.equal(late(folder(false)).autoDone, false);
-  assert.equal(late(folder(true)).autoDone, true);
-  assert.equal(rows(folder(false)).filter((d) => d.title === 'Assignment 2').length, 1); // Brightspace's row replaces the config one
+  const folder = (autoDone) => [{ id: '3:drop:9', title: 'Assignment 2', kind: 'assignment', due: new Date(2026, 9, 16, 17, 0).toISOString(), autoDone }];
+  const synced = rows(folder(false));
+  assert.equal(synced.length, 1); // Brightspace's row replaces the config one
+  assert.equal(synced[0].id, '3:drop:9');
+  assert.equal(new Date(synced[0].due).toString(), sunday); // not the folder's Fri 5:00 PM
+  assert.equal(synced[0].realDue, undefined);
+  assert.equal(synced[0].live, true);
+  assert.equal(rows(folder(true))[0].autoDone, true);
 });

@@ -205,8 +205,15 @@ async function syncCourse(client, course, now) {
 export function courseDeadlines(course) {
   const { code, ou } = course;
   // Quizzes and folders that exist in Brightspace are `live`: there is something to open and work on.
+  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  // Config entries marked `keepDate` give their date to the Brightspace item of the same name.
+  const kept = EXTRA_DEADLINES.filter((x) => x.course === code && x.keepDate);
   const fromBrightspace = (course.deadlines || []).filter((d) => !d.id.startsWith('cfg:')) // older snapshots baked these in
-    .map((d) => (/:(quiz|drop):/.test(d.id) ? { ...d, live: true } : d));
+    .map((d) => (/:(quiz|drop):/.test(d.id) ? { ...d, live: true } : d))
+    .map((d) => {
+      const k = kept.find((x) => norm(x.title) === norm(d.title));
+      return k ? { ...d, due: localDate(k.date) } : d;
+    });
   // Names of work that's finished as far as Brightspace knows: grade items with a mark (from the
   // sync and straight from the grade sheet) and folders you've submitted to.
   const gradedNames = [...new Set([
@@ -216,7 +223,6 @@ export function courseDeadlines(course) {
     ...(course.deadlines || []).filter((d) => d.autoDone && /:drop:/.test(d.id)).map((d) => d.title),
   ])];
   const groupId = (g) => (g ? `group:${slug(code)}:${slug(g)}` : undefined);
-  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const synced = new Set(fromBrightspace.map((d) => norm(d.title)));
   const countMatching = (pattern, names) => names.filter((n) => new RegExp(pattern, 'i').test(n)).length;
   const syncedTitles = fromBrightspace.map((d) => d.title);

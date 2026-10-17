@@ -95,7 +95,8 @@ export const DUE_NIGHT_BEFORE = true;
 // every note is graded the entry is removed.
 // Entries (and notes) sharing a `group` are about the same thing: ticking one ticks them all.
 // `doneWith` also marks it done once the Brightspace item matching that pattern is submitted or graded.
-// `keepDate` stops a course website's date (COURSE_SITES) from replacing the one written here.
+// `keepDate` stops a course website's date (COURSE_SITES) from replacing the one written here, and
+// gives that date to the Brightspace item of the same name.
 // `openWeekOf` lists it under "Open now" from the Monday of the week it's due, for work Brightspace
 // can't report as open. `openSteps` ([{ title, gradedAs }]) names the part to do next there.
 export const EXTRA_DEADLINES = [
@@ -113,17 +114,13 @@ export const EXTRA_DEADLINES = [
   // COMP 3000: course website, not Brightspace. These dates are only the fallback: each sync
   // reads the real ones from the site (COURSE_SITES above), which also supplies the tutorials.
   // Assignment 1 moved Sep 28 -> Sep 30 -> Oct 5 -> Oct 4.
-  // Assignment 2: announced Oct 10 as officially due Fri Oct 16 (the course page still says Oct 15,
-  // 2:30 PM, so `keepDate` stops the site's date replacing this one), accepted until Sat Oct 17.
-  ...[[1, '2026-10-04'], [2, '2026-10-16', true], [3, '2026-11-16'], [4, '2026-12-07']].map(([n, date, keepDate]) => ({
+  // Assignment 2: announced Oct 10 as officially due Fri Oct 16; now accepted until Sun Oct 18 night.
+  // The course page still says Oct 15, 2:30 PM and the Brightspace folder Fri Oct 16, 5:00 PM,
+  // so `keepDate` makes Sunday night the one date shown.
+  ...[[1, '2026-10-04'], [2, '2026-10-18', true], [3, '2026-11-16'], [4, '2026-12-07']].map(([n, date, keepDate]) => ({
     course: 'COMP 3000', title: `Assignment ${n}`, date, keepDate, kind: 'assignment', gradedAs: `^Assignment ${n}\\b`,
     url: `https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Assignment_${n}`,
   })),
-  {
-    course: 'COMP 3000', title: 'Assignment 2: last chance (accepted until Saturday night; solutions go up Sunday)', date: '2026-10-17',
-    kind: 'assignment', gradedAs: '^Assignment 2\\b', doneWith: '^Assignment 2$',
-    url: 'https://homeostasis.scs.carleton.ca/wiki/index.php/Operating_Systems_2026F:_Assignment_2',
-  },
   { course: 'COMP 3000', title: 'Optional Assignment 2 Q&A (virtual, recorded; time TBA)', date: '2026-10-19', end: '2026-10-19', kind: 'event', allDay: true },
   // Section B: in class Wed Oct 21; section A writes Tue Oct 20. Outline:
   // "Oct. 20th & 21st during class"; confirmed in the Oct 10 announcement.
