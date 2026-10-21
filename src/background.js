@@ -27,12 +27,12 @@ chrome.action.onClicked.addListener(async () => {
 // wake-up, when Chrome may still be running an older copy. The dashboard compares it (fresh.js).
 let recorded = null;
 const recordBuild = () => (recorded ??= (async () => {
-  const { reopenDashboard } = await chrome.storage.local.get('reopenDashboard');
+  const { reopenDashboard, syncAfterReload } = await chrome.storage.local.get(['reopenDashboard', 'syncAfterReload']);
   await chrome.storage.local.set({ codeHash: await codeHash() });
-  if (!reopenDashboard) return;
-  // The dashboard reloaded us because we were stale: bring it back and sync with the new code.
-  await chrome.storage.local.remove('reopenDashboard');
-  await chrome.tabs.create({ url: DASHBOARD });
+  if (!reopenDashboard && !syncAfterReload) return;
+  // We were reloaded for being stale (by the dashboard, or by a scheduled sync): sync with the new code.
+  await chrome.storage.local.remove(['reopenDashboard', 'syncAfterReload']);
+  if (reopenDashboard) await chrome.tabs.create({ url: DASHBOARD });
   await syncAndUpload();
 })());
 
@@ -40,11 +40,21 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create('sync', { periodInMinutes: SYNC_EVERY_MIN, delayInMinutes: 1 });
   recordBuild();
 });
-// Belt and braces: the first start after a dashboard-requested reload, in case onInstalled doesn't fire.
-chrome.storage.local.get('reopenDashboard').then(({ reopenDashboard }) => reopenDashboard && recordBuild());
+// Belt and braces: the first start after a requested reload, in case onInstalled doesn't fire.
+chrome.storage.local.get(['reopenDashboard', 'syncAfterReload'])
+  .then(({ reopenDashboard, syncAfterReload }) => (reopenDashboard || syncAfterReload) && recordBuild());
 
+// A scheduled sync with old code (files changed since the extension last loaded) would send the
+// phone stale deadlines, so reload first and sync from the fresh worker instead.
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'sync') await syncAndUpload();
+  if (alarm.name !== 'sync') return;
+  const { codeHash: running } = await chrome.storage.local.get('codeHash');
+  if (running && running !== await codeHash()) {
+    await chrome.storage.local.set({ syncAfterReload: true });
+    chrome.runtime.reload();
+    return;
+  }
+  await syncAndUpload();
 });
 
 // Dashboard asks the worker to sync so only one runs at a time.
