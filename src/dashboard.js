@@ -165,10 +165,12 @@ function renderHeader() {
   const status = document.getElementById('sync-status');
   const btn = document.getElementById('sync-btn');
   btn.disabled = state.syncing;
-  btn.textContent = state.syncing ? 'Syncing…' : 'Sync now';
+  // The phone page (phone/boot.js sets globalThis.tracker) only re-reads what the laptop last synced.
+  const onPhone = !!globalThis.tracker;
+  btn.textContent = state.syncing ? (onPhone ? 'Refreshing…' : 'Syncing…') : (onPhone ? 'Refresh' : 'Sync now');
   const s = state.snapshot;
   status.textContent = s
-    ? `${s.user ? s.user + ' · ' : ''}Synced ${longFmt.format(new Date(s.syncedAt))}`
+    ? `${s.user ? s.user + ' · ' : ''}${onPhone ? 'Laptop synced' : 'Synced'} ${longFmt.format(new Date(s.syncedAt))}`
     : state.syncing ? 'Syncing with Brightspace…' : 'Not synced yet';
 
   const banner = document.getElementById('banner');
