@@ -59,16 +59,21 @@ Then open http://127.0.0.1:5510/dev/preview.html to see the dashboard with sampl
 
 ## Phone
 
-The phone page is the same dashboard, reading your data from a **private** GitHub repo. After every
-sync the extension writes your data there, plus the phone page's own code, and ticks made on either
+The phone page is the same dashboard, reading your data from the `data` branch of this (private)
+repo. After every sync the extension writes your data there, plus the phone page's own code, and ticks made on either
 side are merged (`src/prefs.js`). The phone never talks to Brightspace; it shows what your laptop
 last synced.
 
 The public part is only a sign-in box (`phone-public/`): a repo field, a token field and a script
 that fetches the real page from your private repo. Nothing in it names this project.
 
-1. Right-click the extension icon, choose **Options**, and follow the steps there: make an empty
-   private repo and a fine-grained token that can only read and write that repo's contents.
+1. Right-click the extension icon, choose **Options**, and follow the steps there: make a
+   fine-grained token that can only read and write this repo's contents. The `data` branch must
+   exist; it's an empty branch with no history in common with `main`. To make it again:
+
+   ```bash
+   git push origin $(git commit-tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m "Phone data"):refs/heads/data
+   ```
 2. Build the public page:
 
    ```bash
@@ -79,8 +84,7 @@ that fetches the real page from your private repo. Nothing in it names this proj
    of it), and turn on GitHub Pages for it (Settings → Pages → Deploy from branch → `main`, root).
    You only need to do this again if `phone-public/` changes; the dashboard code itself reaches the
    phone through the private repo.
-3. Open `https://you.github.io/your-pages-repo/` on your phone, enter the private repo (`owner/name`) and the
-   token, then use **Add to Home Screen**.
+3. Open `https://you.github.io/your-pages-repo/` on your phone, enter `you/brightspace-data` and the token, then use **Add to Home Screen**.
 
 To try it without GitHub, run `npm run preview` and open http://127.0.0.1:5510/dev/phone-preview.html
 (sign in as `me/private` with token `good`).

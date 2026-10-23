@@ -1,4 +1,5 @@
-// A private GitHub repo that carries your data to the phone page. It holds:
+// A private GitHub repo that carries your data to the phone page, on its own branch (`data`) so
+// these writes never touch your code on main. The branch holds:
 //   data.json   written by the extension after each sync
 //   prefs.json  your ticks, written by both sides
 //   app.json    the phone page's own code, written by the extension (see phone.js)
@@ -7,11 +8,12 @@
 import { mergePrefs } from './prefs.js';
 
 const API = 'https://api.github.com/repos';
+const BRANCH = 'data';
 
 // "owner/name" from either that or a github.com URL.
 export const repoName = (s) => s.trim().replace(/\.git$/, '').replace(/\/+$/, '').split('/').slice(-2).join('/');
 
-const url = (repo, path = '') => `${API}/${repo}/contents/${path}`;
+const url = (repo, path = '') => `${API}/${repo}/contents/${path}?ref=${BRANCH}`;
 
 async function call(href, token, init = {}, raw = false) {
   const res = await fetch(href, {
@@ -65,8 +67,8 @@ async function shas({ repo, token }) {
 }
 
 async function put({ repo, token }, path, value, sha) {
-  const body = { message: `Update ${path}`, content: toBase64(JSON.stringify(value)), ...(sha ? { sha } : {}) };
-  await call(url(repo, path), token, { method: 'PUT', body: JSON.stringify(body) });
+  const body = { message: `Update ${path}`, branch: BRANCH, content: toBase64(JSON.stringify(value)), ...(sha ? { sha } : {}) };
+  await call(`${API}/${repo}/contents/${path}`, token, { method: 'PUT', body: JSON.stringify(body) });
 }
 
 // Write files that only the extension writes (data.json, app.json).

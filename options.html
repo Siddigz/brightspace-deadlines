@@ -10,13 +10,13 @@
   <header class="top">
     <div class="brand">
       <h1>Phone access</h1>
-      <p class="muted">Copies your deadlines, grades and ticks to a private GitHub repo that the phone page reads.</p>
+      <p class="muted">Copies your deadlines, grades and ticks to the data branch of your private GitHub repo, which the phone page reads.</p>
     </div>
   </header>
 
   <main id="view">
     <ol class="hint">
-      <li>Make a new <b>private</b> repo at <a href="https://github.com/new" target="_blank">github.com/new</a>. Leave it empty.</li>
+      <li>Use this project's own private repo (<b>you/brightspace-data</b>). Everything goes on its <b>data</b> branch, so main is never touched.</li>
       <li>Make a fine-grained token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">github.com/settings/personal-access-tokens/new</a>.
         Under <b>Repository access</b>, choose <b>Only select repositories</b> and pick that repo. Under <b>Permissions</b>, set <b>Contents</b> to <b>Read and write</b>.
         Pick a long expiry; when it runs out, make a new one and enter it here and on the phone.</li>
@@ -25,7 +25,7 @@
     </ol>
 
     <form class="form" id="phone-form">
-      <label style="flex:1 1 220px">Private repo<input name="repo" autocomplete="off" placeholder="owner/name" required></label>
+      <label style="flex:1 1 220px">Private repo<input name="repo" autocomplete="off" placeholder="you/brightspace-data" required></label>
       <label style="flex:1 1 280px">GitHub token<input name="token" type="password" autocomplete="off" required></label>
       <button class="btn primary" type="submit">Save</button>
     </form>

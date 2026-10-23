@@ -21,7 +21,7 @@ form.addEventListener('submit', (e) => {
 });
 
 async function fetchApp({ repo, token }) {
-  const res = await fetch(`https://api.github.com/repos/${repo}/contents/app.json`, {
+  const res = await fetch(`https://api.github.com/repos/${repo}/contents/app.json?ref=data`, {
     cache: 'no-store',
     headers: { Accept: 'application/vnd.github.raw+json', Authorization: `Bearer ${token}` },
   });
