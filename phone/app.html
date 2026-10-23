@@ -1,0 +1,19 @@
+<div id="app" hidden>
+  <header class="top">
+    <div class="brand">
+      <h1>Course Tracker</h1>
+      <p id="sync-status" class="muted">Loading…</p>
+    </div>
+    <button id="sync-btn" class="btn primary">Refresh</button>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-view="deadlines" aria-selected="true">Deadlines</button>
+    <button role="tab" data-view="grades" aria-selected="false">Grades</button>
+    <button role="tab" data-view="news" aria-selected="false">Announcements<span id="news-badge" class="tab-badge" hidden></span></button>
+  </nav>
+  <div id="course-filter" class="chips"></div>
+  <main id="view"></main>
+  <p class="hint"><a href="#" id="forget">Sign out</a></p>
+</div>
+<p id="load-error" class="hint" hidden></p>

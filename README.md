@@ -59,26 +59,28 @@ Then open http://127.0.0.1:5510/dev/preview.html to see the dashboard with sampl
 
 ## Phone
 
-The phone page is the same dashboard, reading your data from a secret GitHub gist. The extension
-updates the gist after every sync, and ticks made on either side are merged (`src/prefs.js`). The
-phone never talks to Brightspace; it shows what your laptop last synced.
+The phone page is the same dashboard, reading your data from a **private** GitHub repo. After every
+sync the extension writes your data there, plus the phone page's own code, and ticks made on either
+side are merged (`src/prefs.js`). The phone never talks to Brightspace; it shows what your laptop
+last synced.
 
-1. Right-click the extension icon, choose **Options**, and follow the steps there. You'll need a
-   fine-grained GitHub token whose only permission is **Gists: Read and write**. It creates the gist
-   and shows its ID.
-2. Build the page:
+The public part is only a sign-in box (`phone-public/`): a repo field, a token field and a script
+that fetches the real page from your private repo. Nothing in it names this project.
+
+1. Right-click the extension icon, choose **Options**, and follow the steps there: make an empty
+   private repo and a fine-grained token that can only read and write that repo's contents.
+2. Build the public page:
 
    ```bash
    npm run build:phone
    ```
 
-   `phone-dist/` holds only generic code (no `config.js`, no fixture, no data), so it's safe in a
-   public repo. Push it to your **public** Pages repo (any public repo of your own), and turn on
-   GitHub Pages for it (Settings → Pages → Deploy from branch → `main`, root).
-3. Open `https://<you>.github.io/tracker-phone-app/` on your phone, enter the gist ID (and the
-   token, if you want to tick things off from the phone), then use **Add to Home Screen**.
+   Push `phone-dist/` to your **public** Pages repo (`you/your-pages-repo`; `phone-dist/` is already a clone
+   of it), and turn on GitHub Pages for it (Settings → Pages → Deploy from branch → `main`, root).
+   You only need to do this again if `phone-public/` changes; the dashboard code itself reaches the
+   phone through the private repo.
+3. Open `https://you.github.io/your-pages-repo/` on your phone, enter the private repo (`owner/name`) and the
+   token, then use **Add to Home Screen**.
 
-Re-run step 2 and push whenever you change the dashboard code. `config.js` changes need no
-rebuild; they reach the phone with the next sync.
-
-Note: a secret gist is unlisted, not private. Anyone with its URL can read it, so don't share it.
+To try it without GitHub, run `npm run preview` and open http://127.0.0.1:5510/dev/phone-preview.html
+(sign in as `me/private` with token `good`).

@@ -31,7 +31,7 @@ test('checklist deadlines are done once every item is ticked', () => {
 test('phone config stand-in covers every config import in shared code', async () => {
   const shim = await readFile('phone/src/config.js', 'utf8');
   const exported = new Set(shim.match(/export const \{([^}]*)\}/)[1].split(',').map((s) => s.trim()));
-  for (const f of ['src/dashboard.js', 'src/grades.js', 'src/prefs.js', 'src/gist.js']) {
+  for (const f of ['src/dashboard.js', 'src/grades.js', 'src/prefs.js', 'src/repo.js']) {
     const src = await readFile(f, 'utf8');
     for (const [, names] of src.matchAll(/import \{([^}]*)\} from '\.\/config\.js'/g)) {
       for (const n of names.split(',').map((s) => s.trim())) assert.ok(exported.has(n), `${f} imports ${n} from config.js`);

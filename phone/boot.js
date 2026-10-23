@@ -1,99 +1,85 @@
-// Phone page start-up: load your data from the gist, then run the extension's own dashboard
-// with chrome.* stood in for. Ticks are saved here first and merged into the gist.
+// Phone page start-up, run by the public sign-in page (phone-public/loader.js) once it has
+// fetched this code from your private repo. Loads your data from the repo, then runs the
+// extension's own dashboard with chrome.* stood in for. Ticks are saved here first and merged
+// into the repo.
 
-import { readGist, syncPrefs, gistId } from './src/gist.js';
-import { mergePrefs } from './src/prefs.js';
+import { readJSON, syncPrefs } from './src/repo.js';
 
-const SETTINGS = 'tracker-settings';
+// { repo, token, forget } from the sign-in page.
+const cfg = globalThis.signedIn;
 const CACHE = 'tracker-cache';
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
-const settings = read(SETTINGS);
-if (!settings?.gistId) setup();
-else await start();
+// tracker.data = data.json from the extension; prefs = your ticks; base = last copy agreed with the repo.
+const tracker = globalThis.tracker = { data: null, prefs: {}, base: null, error: null, ...read(CACHE) };
+const listeners = [];
+const notify = () => listeners.forEach((f) => f({}));
+const persist = () => write(CACHE, { data: tracker.data, prefs: tracker.prefs, base: tracker.base });
 
-function setup() {
-  const form = document.getElementById('setup');
-  form.hidden = false;
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    write(SETTINGS, { gistId: gistId(form.gist.value), token: form.token.value.trim() || null });
-    location.reload();
-  });
-}
+let queue = Promise.resolve();
+const serial = (fn) => (queue = queue.then(fn, fn));
 
-async function start() {
-  // tracker.data = data.json from the extension; prefs = your ticks; base = last copy agreed with the gist.
-  const tracker = globalThis.tracker = { data: null, prefs: {}, base: null, error: null, ...read(CACHE) };
-  const listeners = [];
-  const notify = () => listeners.forEach((f) => f({}));
-  const persist = () => write(CACHE, { data: tracker.data, prefs: tracker.prefs, base: tracker.base });
+let pulledAt = 0;
+const pull = () => serial(async () => {
+  try {
+    const data = await readJSON(cfg, 'data.json');
+    if (!data) throw new Error('No data in the repo yet. Sync once on the laptop.');
+    tracker.data = data;
+    tracker.prefs = tracker.base = await syncPrefs(cfg, tracker.prefs, tracker.base);
+    tracker.error = null;
+    pulledAt = Date.now();
+    persist();
+  } catch (e) {
+    tracker.error = e.message;
+  }
+});
 
-  let queue = Promise.resolve();
-  const serial = (fn) => (queue = queue.then(fn, fn));
-
-  let pulledAt = 0;
-  const pull = () => serial(async () => {
+tracker.savePrefs = (prefs) => {
+  tracker.prefs = prefs;
+  persist();
+  serial(async () => {
     try {
-      const files = await readGist(settings.gistId, settings.token);
-      tracker.data = files['data.json'];
-      tracker.prefs = settings.token
-        ? await syncPrefs(settings, tracker.prefs, tracker.base, files['prefs.json'] ?? null)
-        : mergePrefs(tracker.base, tracker.prefs, files['prefs.json'] || {}); // read-only: ticks stay on this phone
-      tracker.base = settings.token ? tracker.prefs : files['prefs.json'] || {};
+      const merged = await syncPrefs(cfg, tracker.prefs, tracker.base);
+      const changed = JSON.stringify(merged) !== JSON.stringify(tracker.prefs);
+      tracker.prefs = tracker.base = merged;
       tracker.error = null;
-      pulledAt = Date.now();
       persist();
+      if (changed) notify();
     } catch (e) {
-      tracker.error = e.message;
+      tracker.error = `Couldn't save to GitHub: ${e.message}`;
+      notify();
     }
   });
+};
 
-  tracker.savePrefs = (prefs) => {
-    tracker.prefs = prefs;
-    persist();
-    if (!settings.token) return;
-    serial(async () => {
-      try {
-        const merged = await syncPrefs(settings, tracker.prefs, tracker.base);
-        const changed = JSON.stringify(merged) !== JSON.stringify(tracker.prefs);
-        tracker.prefs = tracker.base = merged;
-        tracker.error = null;
-        persist();
-        if (changed) notify();
-      } catch (e) {
-        tracker.error = `Couldn't save to GitHub: ${e.message}`;
-        notify();
-      }
-    });
-  };
-
-  globalThis.chrome = {
-    storage: { onChanged: { addListener: (f) => listeners.push(f) } },
-    runtime: {
-      // "Refresh" (and the dashboard's own stale check) re-reads the gist.
-      async sendMessage(msg) {
-        if (msg?.type === 'sync' && Date.now() - pulledAt > 15e3) await pull();
-      },
+globalThis.chrome = {
+  storage: { onChanged: { addListener: (f) => listeners.push(f) } },
+  runtime: {
+    // "Refresh" (and the dashboard's own stale check) re-reads the repo.
+    async sendMessage(msg) {
+      if (msg?.type === 'sync' && Date.now() - pulledAt > 15e3) await pull();
     },
-  };
+  },
+};
 
-  await pull();
-  if (!tracker.data) {
-    document.getElementById('setup').hidden = false;
-    document.querySelector('#setup .hint').textContent = `Couldn't load your data: ${tracker.error}`;
-    setup();
-    return;
-  }
+const forget = (e) => {
+  e?.preventDefault();
+  localStorage.removeItem(CACHE);
+  cfg.forget();
+};
 
+await pull();
+if (!tracker.data) {
+  const p = document.getElementById('load-error');
+  p.hidden = false;
+  p.textContent = `Couldn't load your data: ${tracker.error} `;
+  const a = Object.assign(document.createElement('a'), { href: '#', textContent: 'Sign out' });
+  a.addEventListener('click', forget);
+  p.append(a);
+} else {
   document.getElementById('app').hidden = false;
-  document.getElementById('forget').addEventListener('click', (e) => {
-    e.preventDefault();
-    localStorage.removeItem(SETTINGS);
-    localStorage.removeItem(CACHE);
-    location.reload();
-  });
+  document.getElementById('forget').addEventListener('click', forget);
   // Back from another app: show the latest.
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible' && Date.now() - pulledAt > 60e3) {
@@ -101,6 +87,5 @@ async function start() {
       notify();
     }
   });
-
   await import('./src/dashboard.js');
 }

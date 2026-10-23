@@ -1,4 +1,4 @@
-// Phone stand-in for the extension's store.js: same exports, backed by the gist (see boot.js).
+// Phone stand-in for the extension's store.js: same exports, backed by your private repo (see boot.js).
 
 import { DEFAULT_PREFS, applyGroups } from './prefs.js';
 

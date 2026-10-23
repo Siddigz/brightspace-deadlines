@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Pad</title>
+  <meta name="theme-color" content="#111111">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    body { margin: 0; background: #111; color: #ddd; font: 16px/1.4 system-ui, sans-serif; }
+    form { max-width: 360px; margin: 18vh auto 0; padding: 0 16px; display: flex; flex-direction: column; gap: 12px; }
+    input { padding: 10px; border-radius: 8px; border: 1px solid #333; background: #1b1b1b; color: inherit; font: inherit; }
+    button { padding: 10px; border-radius: 8px; border: 0; background: #ddd; color: #111; font: inherit; font-weight: 600; }
+    p { margin: 0; color: #999; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <form id="signin" hidden>
+    <input name="repo" placeholder="owner/repo" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+    <input name="token" type="password" placeholder="token" autocomplete="off" required>
+    <button type="submit">Open</button>
+    <p id="msg"></p>
+  </form>
+  <script type="module" src="loader.js"></script>
+</body>
+</html>

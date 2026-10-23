@@ -7,7 +7,7 @@
 
 const FILES = [
   'manifest.json', 'src/background.js', 'src/store.js', 'src/sync.js', 'src/d2l.js', 'src/config.js',
-  'src/prefs.js', 'src/coursesite.js', 'src/phone.js', 'src/gist.js', 'src/build.js',
+  'src/prefs.js', 'src/coursesite.js', 'src/phone.js', 'src/repo.js', 'src/build.js',
 ];
 
 export async function codeHash() {

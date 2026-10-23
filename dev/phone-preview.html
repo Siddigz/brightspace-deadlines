@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Phone preview</title>
+  <style>body { margin: 0; background: #111; color: #ddd; font: 16px/1.4 system-ui, sans-serif; }</style>
+</head>
+<body>
+  <!-- The real public sign-in page (phone-public/loader.js) against a fake GitHub that holds the
+       sample data and this checkout's phone code. Serve the repo root and open /dev/phone-preview.html.
+       The fake repo lives in sessionStorage, so ticks survive a reload; close the tab to reset. -->
+  <form id="signin" hidden>
+    <input name="repo" placeholder="owner/repo">
+    <input name="token" type="password" placeholder="token">
+    <button type="submit">Open</button>
+    <p id="msg"></p>
+  </form>
+
+  <script type="module">
+    import { fixture } from './fixture.js';
+    import { allDeadlines } from '../src/store.js';
+    import { COURSE_COLORS, CODE_LABELS, BASE, OUTLINES, LETTERS } from '../src/config.js';
+
+    // Same list as src/phone.js.
+    const APP_FILES = {
+      'boot.js': 'phone/boot.js', 'src/config.js': 'phone/src/config.js', 'src/store.js': 'phone/src/store.js',
+      'src/dashboard.js': 'src/dashboard.js', 'src/grades.js': 'src/grades.js', 'src/prefs.js': 'src/prefs.js', 'src/repo.js': 'src/repo.js',
+    };
+    const text = async (f) => (await fetch(`../${f}`, { cache: 'no-store' })).text();
+    const files = {};
+    for (const [p, f] of Object.entries(APP_FILES)) files[p] = await text(f);
+    const app = { title: 'Course Tracker', entry: 'boot.js', body: await text('phone/app.html'), css: await text('dashboard.css'), files };
+    const data = { snapshot: fixture, syncError: null, deadlines: allDeadlines(fixture, { custom: [] }), config: { COURSE_COLORS, CODE_LABELS, BASE, OUTLINES, LETTERS } };
+
+    // Fake repo: path -> { text, sha }.
+    const KEY = 'fake-repo';
+    const repo = JSON.parse(sessionStorage.getItem(KEY) || '{}');
+    repo['app.json'] = { text: JSON.stringify(app), sha: 'a' };
+    repo['data.json'] = { text: JSON.stringify(data), sha: 'd' };
+    const save = () => sessionStorage.setItem(KEY, JSON.stringify(repo));
+    save();
+    globalThis.fakeRepo = repo;
+
+    const b64 = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+    const unb64 = (s) => new TextDecoder().decode(Uint8Array.from(atob(s), (c) => c.charCodeAt(0)));
+    const json = (v, status = 200) => new Response(JSON.stringify(v), { status, headers: { 'content-type': 'application/json' } });
+    const realFetch = fetch;
+    globalThis.fetch = async (input, init = {}) => {
+      const u = new URL(typeof input === 'string' ? input : input.url, location.href);
+      if (u.host !== 'api.github.com') return realFetch(input, init);
+      const auth = init.headers?.Authorization;
+      if (auth !== 'Bearer good') return json({ message: 'Bad credentials' }, 401);
+      const m = u.pathname.match(/^\/repos\/me\/private(?:\/contents\/?(.*))?$/);
+      if (!m) return json({ message: 'Not Found' }, 404);
+      const path = m[1];
+      if (path === undefined) return json({ private: true });
+      if (init.method === 'PUT') {
+        const body = JSON.parse(init.body);
+        if (repo[path] && body.sha !== repo[path].sha) return json({ message: 'conflict' }, 409);
+        repo[path] = { text: unb64(body.content), sha: Math.random().toString(36).slice(2) };
+        save();
+        return json({ content: { sha: repo[path].sha } });
+      }
+      if (path === '') return json(Object.entries(repo).map(([p, f]) => ({ path: p, sha: f.sha })));
+      const f = repo[path];
+      if (!f) return json({ message: 'Not Found' }, 404);
+      if (init.headers?.Accept?.includes('raw')) return new Response(f.text);
+      return json({ content: b64(f.text), sha: f.sha });
+    };
+
+    await import('../phone-public/loader.js');
+  </script>
+</body>
+</html>

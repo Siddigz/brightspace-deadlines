@@ -1,11 +1,25 @@
-// Mirrors your data into the secret gist the phone page reads (see src/gist.js). Set up from the
+// Mirrors your data into the private repo the phone page reads (see src/repo.js). Set up from the
 // extension's options page; does nothing until then.
+//
+// The phone page's own code goes in that repo too (app.json), so the public page is only a
+// sign-in box that fetches it (phone-public/). Nothing about what this is lives in public.
 
 import { load, allDeadlines } from './store.js';
-import { createGist, writeGist, syncPrefs } from './gist.js';
+import { checkRepo, writeJSON, syncPrefs } from './repo.js';
 import { COURSE_COLORS, CODE_LABELS, BASE, OUTLINES, LETTERS } from './config.js';
 
-// { token, gistId, base, uploadedAt, error }
+// Phone page files: path on the phone -> file in this extension.
+const APP_FILES = {
+  'boot.js': 'phone/boot.js',
+  'src/config.js': 'phone/src/config.js',
+  'src/store.js': 'phone/src/store.js',
+  'src/dashboard.js': 'src/dashboard.js',
+  'src/grades.js': 'src/grades.js',
+  'src/prefs.js': 'src/prefs.js',
+  'src/repo.js': 'src/repo.js',
+};
+
+// { token, repo, base, uploadedAt, appHash, error }
 export async function phoneSettings() {
   const { phone = null } = await chrome.storage.local.get('phone');
   return phone;
@@ -14,6 +28,8 @@ export async function phoneSettings() {
 async function patchSettings(patch) {
   await chrome.storage.local.set({ phone: { ...(await phoneSettings()), ...patch } });
 }
+
+const text = async (f) => (await fetch(chrome.runtime.getURL(f), { cache: 'no-store' })).text();
 
 // Everything the phone page shows, with deadlines already worked out (config.js stays private).
 async function dataFile() {
@@ -26,16 +42,22 @@ async function dataFile() {
   };
 }
 
-export async function setUp(token, gistId) {
-  if (!gistId) {
-    const { prefs } = await load();
-    gistId = await createGist(token, { 'data.json': await dataFile(), 'prefs.json': prefs });
-    await chrome.storage.local.set({ phone: { token, gistId, base: prefs } });
-  } else {
-    await chrome.storage.local.set({ phone: { token, gistId, base: null } });
-  }
-  await upload();
-  return gistId;
+// The phone page's code, read fresh from disk, and a fingerprint of it.
+async function appFile() {
+  const paths = Object.keys(APP_FILES);
+  const [body, css, ...sources] = await Promise.all([text('phone/app.html'), text('dashboard.css'), ...paths.map((p) => text(APP_FILES[p]))]);
+  const app = { title: 'Course Tracker', entry: 'boot.js', body, css, files: Object.fromEntries(paths.map((p, i) => [p, sources[i]])) };
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(app)));
+  const hash = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  return { app: { ...app, hash }, hash };
+}
+
+export async function setUp(token, repo) {
+  await checkRepo({ repo, token });
+  await chrome.storage.local.set({ phone: { token, repo, base: null } });
+  await upload({ force: true });
+  const phone = await phoneSettings();
+  if (phone.error) throw new Error(phone.error);
 }
 
 // One at a time, so two prefs merges never race.
@@ -44,7 +66,7 @@ const serial = (fn) => (queue = queue.then(fn, fn));
 
 async function guard(fn) {
   const phone = await phoneSettings();
-  if (!phone?.gistId || !phone.token) return;
+  if (!phone?.repo || !phone.token) return;
   try {
     await fn(phone);
     if (phone.error) await patchSettings({ error: null });
@@ -61,7 +83,11 @@ export const syncPhonePrefs = () => serial(() => guard(async (phone) => {
   await patchSettings({ base: merged });
 }));
 
-export const upload = () => serial(() => guard(async (phone) => {
-  await writeGist(phone.gistId, phone.token, { 'data.json': await dataFile() });
-  await patchSettings({ uploadedAt: new Date().toISOString() });
+// Data every time; the page's code only when it has changed (or `force`).
+export const upload = ({ force = false } = {}) => serial(() => guard(async (phone) => {
+  const files = { 'data.json': await dataFile() };
+  const { app, hash } = await appFile();
+  if (force || hash !== phone.appHash) files['app.json'] = app;
+  await writeJSON(phone, files);
+  await patchSettings({ uploadedAt: new Date().toISOString(), appHash: hash });
 })).then(syncPhonePrefs);
