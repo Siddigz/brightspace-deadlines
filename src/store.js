@@ -64,6 +64,7 @@ const personalDeadlines = PERSONAL_DEADLINES.map((x) => ({
   allDay: !!x.allDay,
   autoDone: false,
   url: x.url,
+  links: x.links,
   checklist: x.checklist,
   highlightUntil: x.highlightUntil,
   locked: x.locked,

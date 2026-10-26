@@ -132,6 +132,7 @@ h2 { font-size: 15px; margin: 0; }
 .row .when { color: var(--muted); font-size: 12px; text-align: right; white-space: nowrap; }
 .row .when.soon { color: var(--warn); font-weight: 600; }
 .kind { color: var(--muted); font-size: 12px; margin-left: 6px; }
+.row .title a.link { font-size: 12px; margin-left: 8px; }
 /* Deadlines due before a `highlightUntil` one (see config.js), and that one itself. */
 .row.before-target { box-shadow: inset 4px 0 0 var(--mark); background: color-mix(in srgb, var(--mark) 9%, transparent); }
 .row.target { box-shadow: inset 4px 0 0 var(--mark); background: color-mix(in srgb, var(--mark) 28%, transparent); font-weight: 700; }

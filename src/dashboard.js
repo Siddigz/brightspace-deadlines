@@ -244,7 +244,7 @@ function renderDeadlines() {
     ? '<span class="no-check"></span>' // locked: nothing to tick, but keep the column so titles line up
     : `<input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">`}
       <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
-      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
+      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${(d.links || []).map(([name, href]) => `<a class="link" href="${esc(href)}" target="_blank">${esc(name)}</a>`).join('')}${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
       <span class="when ${soon ? 'soon' : ''}" title="${esc(longFmt.format(new Date(d.t)))}">${esc(whenText(d))}${d.t > now ? ` · ${relative(d.t)}` : ''}</span>
       ${d.locked ? '' : `<button class="icon-btn" data-hide="${esc(d.id)}" title="Hide this item" aria-label="Hide">×</button>`}
     </div>`;
