@@ -67,7 +67,7 @@ const personalDeadlines = PERSONAL_DEADLINES.map((x) => ({
   links: x.links,
   checklist: x.checklist,
   highlightUntil: x.highlightUntil,
-  locked: x.locked,
+  locked: x.locked || x.kind === 'interview', // interviews always stay up
 }));
 
 export function allDeadlines(snapshot, prefs) {
