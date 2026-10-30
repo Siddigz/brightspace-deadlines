@@ -216,6 +216,7 @@ function renderDeadlines() {
   const mark = (d) => (!target ? '' : d.id === target.id ? 'target' : d.t <= target.t ? 'before-target' : '');
 
   const overdue = [];
+  const late = []; // past due but still accepted with a penalty (LATE_POLICIES)
   const byDay = new Map();
   for (const d of items) {
     const over = isSlot(d) && d.end ? Date.parse(d.end) : d.t;
@@ -223,6 +224,10 @@ function renderDeadlines() {
     // Unfinished checklists stay overdue until done or hidden with ×.
     if (isPast && !state.showAll && d.checklist && !d.done) {
       overdue.push(d);
+      continue;
+    }
+    if (isPast && !state.showAll && !d.done && d.lateUntil && Date.parse(d.lateUntil) > now) {
+      late.push(d);
       continue;
     }
     if (isPast && !state.showAll) {
@@ -237,15 +242,17 @@ function renderDeadlines() {
   }
 
   const sortItems = (a, b) => a.t - b.t || codeOrder(a.course) - codeOrder(b.course);
+  const isLate = (d) => !d.done && d.t < now && d.lateUntil && Date.parse(d.lateUntil) > now;
   const row = (d) => {
     const soon = !d.done && d.t > now && d.t - now < 2 * DAY;
-    return `<div class="row ${d.done ? 'done' : ''} ${mark(d)}">
+    const lateNow = isLate(d);
+    return `<div class="row ${d.done ? 'done' : ''} ${lateNow ? 'late' : ''} ${mark(d)}">
       ${d.locked
     ? '<span class="no-check"></span>' // locked: nothing to tick, but keep the column so titles line up
     : `<input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">`}
       <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
-      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${(d.links || []).map(([name, href]) => `<a class="link" href="${esc(href)}" target="_blank">${esc(name)}</a>`).join('')}${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
-      <span class="when ${soon ? 'soon' : ''}" title="${esc(longFmt.format(new Date(d.t)))}">${esc(whenText(d))}${d.t > now ? ` · ${relative(d.t)}` : ''}</span>
+      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${(d.links || []).map(([name, href]) => `<a class="link" href="${esc(href)}" target="_blank">${esc(name)}</a>`).join('')}${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue && !lateNow ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${lateNow ? `<span class="late-note">${esc(d.latePenalty)} · accepted until ${esc(longFmt.format(new Date(d.lateUntil)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
+      <span class="when ${soon ? 'soon' : ''}" title="${esc(longFmt.format(new Date(d.t)))}">${lateNow ? `due · ${relative(d.t)}` : `${esc(whenText(d))}${d.t > now ? ` · ${relative(d.t)}` : ''}`}</span>
       ${d.locked ? '' : `<button class="icon-btn" data-hide="${esc(d.id)}" title="Hide this item" aria-label="Hide">×</button>`}
     </div>`;
   };
@@ -270,6 +277,9 @@ function renderDeadlines() {
     html += `<p class="target-note"><span class="swatch"></span>Highlighted: everything before <b>${esc(target.title)}</b> · ${esc(dayFmt.format(new Date(target.t)))} · ${relative(target.t)}</p>`;
   }
 
+  if (late.length) {
+    html += `<section class="day late"><h2>Due (late, still accepted)</h2><div class="list">${late.sort(sortItems).map(row).join('')}</div></section>`;
+  }
   if (overdue.length) {
     html += `<section class="day overdue"><h2>Overdue</h2><div class="list">${overdue.sort(sortItems).map(row).join('')}</div></section>`;
   }

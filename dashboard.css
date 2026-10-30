@@ -109,9 +109,13 @@ h2 { font-size: 15px; margin: 0; }
 }
 .week-break::before, .week-break::after { content: ""; height: 2px; background: var(--border); flex: 1; }
 .week-break::before { flex: 0 0 16px; background: var(--accent); }
-.day.overdue + .week-break, .toolbar + .week-break { margin-top: 8px; }
+.day.late + .week-break, .day.overdue + .week-break, .toolbar + .week-break { margin-top: 8px; }
 .day h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
 .day.overdue h2 { color: var(--bad); }
+.day.late h2 { color: var(--bad); }
+.row.late { box-shadow: inset 4px 0 0 var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); }
+.row.late .when { color: var(--bad); font-weight: 700; }
+.row .late-note { display: inline-block; margin-left: 8px; font-size: 12px; color: var(--bad); }
 .list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .row {
   display: grid; grid-template-columns: auto auto 1fr auto auto; align-items: center; gap: 4px 10px;

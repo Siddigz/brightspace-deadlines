@@ -82,6 +82,19 @@ export const DUE_OVERRIDES = {
   },
 };
 
+// Work that's still accepted after its due date, with a penalty (from the course outlines).
+// Once one of these is past due and not done, it stays on the deadlines list in red until the
+// late window closes. `until` is a local date ('2027-04-10' = 11:59 PM that day); `hours` counts
+// from the real due time. Anything not listed here is treated as a hard deadline.
+export const LATE_POLICIES = {
+  'CLCV 2305': [
+    { match: '^(ANCIENT SOURCE|MODERN BOOK|COURSE ESSAY)$', until: '2027-04-10', penalty: 'increasing late penalty' },
+  ],
+  'COMP 2406': [
+    { match: '^Assignment\\b', hours: 12, penalty: '-2% per 15 min late' },
+  ],
+};
+
 // Anything due partway through a day (Friday 10:00 AM, Thursday 2:30 PM) shows as due at 11:59 PM
 // the night before, with the real closing time still on the row. Sittings (tests, sessions, and
 // quizzes that open and close the same day) keep their real time.

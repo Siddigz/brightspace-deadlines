@@ -79,3 +79,14 @@ test('a locked deadline is never done, whatever was ticked before', () => {
   const d = { id: 'g', locked: true, autoDone: true };
   assert.equal(isDone(d, { done: { g: true }, checked: {} }), false);
 });
+
+test('late policy: outline papers stay accepted until the cutoff; COMP 2406 assignments for 12 hours; others are hard', async () => {
+  const { withLatePolicy } = await import('../src/store.js');
+  const paper = withLatePolicy({ course: 'CLCV 2305', title: 'ANCIENT SOURCE', due: '2026-11-03T04:59:00.000Z' });
+  assert.equal(new Date(paper.lateUntil).getDate(), 10);
+  assert.equal(paper.latePenalty, 'increasing late penalty');
+  const a = withLatePolicy({ course: 'COMP 2406', title: 'Assignment 3', due: '2026-10-29T03:59:00.000Z', realDue: '2026-10-30T03:59:00.000Z' });
+  assert.equal(a.lateUntil, '2026-10-30T15:59:00.000Z');
+  assert.equal(withLatePolicy({ course: 'COMP 2406', title: 'Tutorial 3', due: '2026-10-29T03:59:00.000Z' }).lateUntil, undefined);
+  assert.equal(withLatePolicy({ course: 'BIOL 1010', title: 'Quiz', due: '2026-10-29T03:59:00.000Z' }).lateUntil, undefined);
+});

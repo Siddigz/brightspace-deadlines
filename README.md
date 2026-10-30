@@ -26,6 +26,9 @@ If sync says you're not signed in, open Brightspace, sign in, and sync again.
   - deadlines you add yourself
 
   An item counts as done when Brightspace shows a submission or grade, or when you tick it.
+  Missed work that the outline still accepts late (`LATE_POLICIES`, e.g. CLCV 2305 papers until
+  Apr 10, COMP 2406 assignments for 12 hours) stays at the top in red, with the penalty, until the
+  late window closes. Anything else counts as a hard deadline and only shows under Overdue for two weeks.
   Anything worth bonus marks gets a **bonus** tag and a note saying what the bonus is (`BONUS_DEADLINES`,
   plus anything Brightspace grades into a bonus category).
 - **Grades:** the Brightspace gradebook, reshaped to match each course outline (`OUTLINES`): "best N of M"

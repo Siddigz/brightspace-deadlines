@@ -3,7 +3,7 @@
 
 import { connect, AuthError } from './d2l.js';
 import { syncAll, localDate, courseDeadlines } from './sync.js';
-import { UNIVERSITY_DATES, PERSONAL_DEADLINES } from './config.js';
+import { UNIVERSITY_DATES, PERSONAL_DEADLINES, LATE_POLICIES } from './config.js';
 import { DEFAULT_PREFS, applyGroups } from './prefs.js';
 import { attachSites } from './coursesite.js';
 
@@ -70,7 +70,17 @@ const personalDeadlines = PERSONAL_DEADLINES.map((x) => ({
   locked: x.locked || x.kind === 'interview', // interviews always stay up
 }));
 
+// Adds `lateUntil` and `latePenalty` to work that's still accepted late (LATE_POLICIES).
+export function withLatePolicy(d) {
+  const policy = (LATE_POLICIES[d.course] || []).find((p) => new RegExp(p.match, 'i').test(d.title));
+  if (!policy) return d;
+  const lateUntil = policy.until
+    ? localDate(policy.until)
+    : new Date(Date.parse(d.realDue || d.due) + policy.hours * 3600e3).toISOString();
+  return { ...d, lateUntil, latePenalty: policy.penalty };
+}
+
 export function allDeadlines(snapshot, prefs) {
-  const fromSync = (snapshot?.courses || []).flatMap(courseDeadlines);
+  const fromSync = (snapshot?.courses || []).flatMap(courseDeadlines).map(withLatePolicy);
   return applyGroups([...fromSync, ...universityDates, ...personalDeadlines, ...prefs.custom], prefs);
 }
