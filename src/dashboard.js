@@ -252,12 +252,14 @@ function renderDeadlines() {
   const row = (d) => {
     const soon = !d.done && d.t > now && d.t - now < 2 * DAY;
     const lateNow = isLate(d);
-    return `<div class="row ${d.done ? 'done' : ''} ${lateNow ? 'late' : ''} ${mark(d)}">
+    // A session that's your catch-up for a tutorial you missed (see sync.js): red, like late work.
+    const behindNow = !d.done && d.behind?.length && Date.parse(d.behindSince) < now;
+    return `<div class="row ${d.done ? 'done' : ''} ${lateNow || behindNow ? 'late' : ''} ${mark(d)}">
       ${d.locked
     ? '<span class="no-check"></span>' // locked: nothing to tick, but keep the column so titles line up
     : `<input type="checkbox" data-done="${esc(d.id)}" ${d.done ? 'checked' : ''} aria-label="Mark done">`}
       <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
-      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${(d.links || []).map(([name, href]) => `<a class="link" href="${esc(href)}" target="_blank">${esc(name)}</a>`).join('')}${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue && !lateNow ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${lateNow ? `<span class="late-note">${esc(d.latePenalty)} · accepted until ${esc(longFmt.format(new Date(d.lateUntil)))}</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
+      <span class="title">${d.url ? `<a href="${esc(d.url)}" target="_blank">${esc(d.title)}</a>` : esc(d.title)}<span class="kind">${esc(d.kind)}</span>${(d.links || []).map(([name, href]) => `<a class="link" href="${esc(href)}" target="_blank">${esc(name)}</a>`).join('')}${d.posted === false ? '<span class="kind">not posted yet</span>' : ''}${d.realDue && !lateNow ? `<span class="kind">closes ${esc(longFmt.format(new Date(d.realDue)))}</span>` : ''}${lateNow ? `<span class="late-note">${esc(d.latePenalty)} · accepted until ${esc(longFmt.format(new Date(d.lateUntil)))}</span>` : ''}${behindNow ? `<span class="late-note">overdue: Tutorial ${d.behind.join(' + ')} (missed ${esc(shortFmt.format(new Date(d.behindSince)))})</span>` : ''}${d.bonus ? `<span class="bonus" title="${esc(d.bonus)}">bonus</span><span class="bonus-note">${esc(d.bonus)}</span>` : ''}${checklist(d)}</span>
       <span class="when ${soon ? 'soon' : ''}" title="${esc(longFmt.format(new Date(d.t)))}">${lateNow ? `due · ${relative(d.t)}` : `${esc(whenText(d))}${d.t > now ? ` · ${relative(d.t)}` : ''}`}</span>
       ${d.locked ? '' : `<button class="icon-btn" data-hide="${esc(d.id)}" title="Hide this item" aria-label="Hide">×</button>`}
     </div>`;

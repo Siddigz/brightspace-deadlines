@@ -43,6 +43,11 @@ test('COMP 3000 site tutorials: one deadline per B2 session, naming every tutori
     [1, 'Tutorial 8: get it marked at your B2 tutorial (last chance)'],
   ]);
   assert.equal(new Date(tut[1].due).toString(), new Date(2026, 10, 10, 18, 5).toString());
+  // Sessions drop off once over; Nov 10 is the catch-up for Tutorial 5, missed on Nov 3.
+  assert.equal(tut.every((d) => d.slot), true);
+  assert.deepEqual(tut[0].behind, []);
+  assert.deepEqual(tut[1].behind, [5]);
+  assert.equal(new Date(tut[1].behindSince).toString(), new Date(2026, 10, 3, 18, 5).toString());
   // Once Tutorial 5 is graded it drops out of every session.
   const later = courseDeadlines(course([1, 2, 3, 4, 5])).filter((d) => d.kind === 'tutorial');
   assert.equal(later[0].title, 'Tutorial 6: get it marked at your B2 tutorial');

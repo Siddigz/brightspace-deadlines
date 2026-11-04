@@ -251,18 +251,21 @@ export function courseDeadlines(course) {
     // Your first session after the release day (released Monday -> Tuesday's session).
     const at = new Date(y, m - 1, d + 1, hh, mm);
     at.setDate(at.getDate() + ((weekday - at.getDay() + 7) % 7));
+    let firstAt = null;
     for (; at <= closes; at.setDate(at.getDate() + 7)) {
       const key = dayKeyOf(at);
       if (!sessions.has(key)) sessions.set(key, { at: new Date(at), tutorials: [] });
       const next = new Date(at);
       next.setDate(next.getDate() + 7);
-      sessions.get(key).tutorials.push({ t, opens, last: next > closes });
+      sessions.get(key).tutorials.push({ t, opens, last: next > closes, firstAt: firstAt ??= new Date(at) });
     }
   }
   const tutorials = [...sessions].map(([key, { at, tutorials: list }]) => {
     const ns = list.map(({ t }) => t.n);
     const lastFor = list.filter((x) => x.last && list.length > 1).map(({ t }) => t.n);
     const newest = list[list.length - 1].t;
+    // Tutorials whose first session came before this one: you missed it, so this is a catch-up.
+    const behind = list.filter((x) => +x.firstAt !== +at);
     const title = ns.length === 1
       ? `Tutorial ${ns[0]}: get it marked at your ${siteCfg.session.name}${list[0].last ? ' (last chance)' : ''}`
       : `Tutorials ${ns.join(' + ')}: get them marked at your ${siteCfg.session.name}${lastFor.length ? ` (last chance for ${lastFor.join(' + ')})` : ''}`;
@@ -276,6 +279,9 @@ export function courseDeadlines(course) {
       due: at.toISOString(),
       end: null,
       fixedTime: true, // it's a session
+      slot: true, // once it's over it drops off; a tutorial still ungraded shows up red at its next session
+      behind: behind.map(({ t }) => t.n),
+      behindSince: behind.length ? new Date(Math.min(...behind.map((x) => +x.firstAt))).toISOString() : undefined,
       autoDone: false,
       url: siteCfg.tutorialUrl.replace('{n}', newest.n),
       links: list.length > 1 ? list.map(({ t }) => [`Tutorial ${t.n}`, siteCfg.tutorialUrl.replace('{n}', t.n)]) : undefined,
