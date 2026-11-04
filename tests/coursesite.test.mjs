@@ -28,24 +28,25 @@ test('COMP 3000 site: tutorials and assignments are read from their tables', () 
   assert.deepEqual(parseCourseSite('nothing here', 2026), { tutorials: [], assignments: [] });
 });
 
-test('COMP 3000 site tutorials: two linked deadlines each (next B2 session, then 8 days after release); gone once graded', async () => {
-  const { isDone } = await import('../src/prefs.js');
-  const course = {
+test('COMP 3000 site tutorials: one deadline per B2 session, naming every tutorial you can get marked there; gone once graded', () => {
+  const course = (graded) => ({
     code: 'COMP 3000', ou: 3, deadlines: [], site: parseCourseSite(raw, 2026),
-    grades: { items: [1, 2, 3, 4].map((n) => ({ id: `t${n}`, name: `Tutorial ${n}`, points: 4, outOf: 4 })) },
-  };
-  const all = courseDeadlines(course);
-  const tut = all.filter((d) => d.kind === 'tutorial');
-  assert.equal(tut.length, 8); // tutorials 5-8, two rows each
-  const [first, final] = tut.filter((d) => d.title.startsWith('Tutorial 5:'));
-  assert.equal(first.title, 'Tutorial 5: get it marked at your B2 tutorial');
-  assert.equal(new Date(first.due).toString(), new Date(2026, 10, 3, 18, 5).toString()); // released Mon Nov 2 -> Tue Nov 3
-  assert.equal(final.title, 'Tutorial 5: last day to get it marked (B2 tutorial, 6:05 PM)');
-  assert.equal(new Date(final.due).toString(), new Date(2026, 10, 10, 23, 59).toString());
-  // Ticking one ticks the other, and only that tutorial.
-  const prefs = { done: { [first.group]: true }, checked: {} };
-  assert.equal(isDone(first, prefs) && isDone(final, prefs), true);
-  assert.equal(isDone(tut.find((d) => d.title.startsWith('Tutorial 6:')), prefs), false);
+    grades: { items: graded.map((n) => ({ id: `t${n}`, name: `Tutorial ${n}`, points: 4, outOf: 4 })) },
+  });
+  const tut = courseDeadlines(course([1, 2, 3, 4])).filter((d) => d.kind === 'tutorial');
+  // Tutorials 5-8 are released Mondays Nov 2-23 and can be marked at that week's and the next Tuesday's session.
+  assert.deepEqual(tut.map((d) => [new Date(d.due).getDate(), d.title]), [
+    [3, 'Tutorial 5: get it marked at your B2 tutorial'],
+    [10, 'Tutorials 5 + 6: get them marked at your B2 tutorial (last chance for 5)'],
+    [17, 'Tutorials 6 + 7: get them marked at your B2 tutorial (last chance for 6)'],
+    [24, 'Tutorials 7 + 8: get them marked at your B2 tutorial (last chance for 7)'],
+    [1, 'Tutorial 8: get it marked at your B2 tutorial (last chance)'],
+  ]);
+  assert.equal(new Date(tut[1].due).toString(), new Date(2026, 10, 10, 18, 5).toString());
+  // Once Tutorial 5 is graded it drops out of every session.
+  const later = courseDeadlines(course([1, 2, 3, 4, 5])).filter((d) => d.kind === 'tutorial');
+  assert.equal(later[0].title, 'Tutorial 6: get it marked at your B2 tutorial');
+  assert.equal(later[0].id, tut[1].id); // same session, same id, so a tick survives
 });
 
 test('COMP 3000 assignment dates come from the site, falling back to config without it', () => {
@@ -103,7 +104,8 @@ test('the wiki is asked which tutorial and assignment pages exist yet', async ()
     assert.equal(c.site.assignments.find((x) => x.n === 2).posted, false);
     const rows = courseDeadlines(c);
     assert.equal(rows.find((d) => d.title === 'Assignment 2').live, false);
-    assert.equal(rows.find((d) => d.title.startsWith('Tutorial 4:')).live, true);
+    assert.equal(rows.find((d) => d.tutorials?.includes(4)).live, true);
+    assert.equal(rows.find((d) => d.tutorials?.join() === '5').live, false);
   } finally {
     globalThis.fetch = realFetch;
   }

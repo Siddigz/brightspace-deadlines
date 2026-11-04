@@ -58,9 +58,9 @@ export const PERSONAL_DEADLINES = [
 ];
 
 // Course websites read on every sync (src/coursesite.js). `url` is the wiki source of the course
-// page. Each tutorial gets two deadlines that tick off together: your first `session` after it's
-// released (weekday 0 = Sun ... 2 = Tue), and the last day, `tutorialDays` after release (the
-// site's rule: "marked within 8 days"). Assignment due dates replace the ones in EXTRA_DEADLINES.
+// page. Each tutorial `session` (weekday 0 = Sun ... 2 = Tue) gets one deadline naming every
+// ungraded tutorial you can get marked there: from your first session after its release until
+// `tutorialDays` after release (the site's rule: "marked within 8 days"). Assignment due dates replace the ones in EXTRA_DEADLINES.
 export const COURSE_SITES = {
   'COMP 3000': {
     url: 'https://homeostasis.scs.carleton.ca/wiki/index.php?title=Operating_Systems_(Fall_2026)&action=raw',

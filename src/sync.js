@@ -32,6 +32,9 @@ function slug(s) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+// "2026-11-10" for a local date.
+const dayKeyOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 export function stripHtml(html) {
   return (html || '')
     .replace(/<br\s*\/?>|<\/p>/gi, '\n')
@@ -236,35 +239,50 @@ export function courseDeadlines(course) {
     const n = /^Assignment (\d+)$/.exec(title);
     return n && site?.assignments.find((a) => a.n === Number(n[1]));
   };
-  const tutorials = (siteCfg && site ? site.tutorials : [])
-    .filter((t) => !graded(`^Tutorial ${t.n}$`))
-    .flatMap((t) => {
-      const [y, m, d] = t.available.split('-').map(Number);
-      const { name, weekday, time } = siteCfg.session;
-      const [hh, mm] = time.split(':').map(Number);
-      // Your first session after the release day (released Monday -> Tuesday's session).
-      const first = new Date(y, m - 1, d + 1, hh, mm);
-      first.setDate(first.getDate() + ((weekday - first.getDay() + 7) % 7));
-      const at = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(first);
-      const row = (key, title, due) => ({
-        id: `site:${slug(code)}:tutorial-${t.n}-${key}`,
-        course: code,
-        title,
-        kind: 'tutorial',
-        opens: new Date(y, m - 1, d).toISOString(),
-        due: due.toISOString(),
-        end: null,
-        autoDone: false,
-        url: siteCfg.tutorialUrl.replace('{n}', t.n),
-        group: groupId(`tutorial-${t.n}`), // ticking either one ticks both
-        posted: t.posted,
-        live: t.posted === true,
-      });
-      return [
-        { ...row('first', `Tutorial ${t.n}: get it marked at your ${name}`, first), fixedTime: true }, // it's a session
-        row('final', `Tutorial ${t.n}: last day to get it marked (${name}, ${at})`, new Date(y, m - 1, d + siteCfg.tutorialDays, 23, 59)),
-      ];
-    });
+  // One deadline per tutorial session, naming every ungraded tutorial you can get marked there:
+  // each one from your first session after its release until `tutorialDays` after release.
+  const sessions = new Map(); // day -> { at, tutorials: [{ t, opens, last }] }
+  for (const t of (siteCfg && site ? site.tutorials : []).filter((t) => !graded(`^Tutorial ${t.n}$`))) {
+    const [y, m, d] = t.available.split('-').map(Number);
+    const { weekday, time } = siteCfg.session;
+    const [hh, mm] = time.split(':').map(Number);
+    const opens = new Date(y, m - 1, d);
+    const closes = new Date(y, m - 1, d + siteCfg.tutorialDays, 23, 59);
+    // Your first session after the release day (released Monday -> Tuesday's session).
+    const at = new Date(y, m - 1, d + 1, hh, mm);
+    at.setDate(at.getDate() + ((weekday - at.getDay() + 7) % 7));
+    for (; at <= closes; at.setDate(at.getDate() + 7)) {
+      const key = dayKeyOf(at);
+      if (!sessions.has(key)) sessions.set(key, { at: new Date(at), tutorials: [] });
+      const next = new Date(at);
+      next.setDate(next.getDate() + 7);
+      sessions.get(key).tutorials.push({ t, opens, last: next > closes });
+    }
+  }
+  const tutorials = [...sessions].map(([key, { at, tutorials: list }]) => {
+    const ns = list.map(({ t }) => t.n);
+    const lastFor = list.filter((x) => x.last && list.length > 1).map(({ t }) => t.n);
+    const newest = list[list.length - 1].t;
+    const title = ns.length === 1
+      ? `Tutorial ${ns[0]}: get it marked at your ${siteCfg.session.name}${list[0].last ? ' (last chance)' : ''}`
+      : `Tutorials ${ns.join(' + ')}: get them marked at your ${siteCfg.session.name}${lastFor.length ? ` (last chance for ${lastFor.join(' + ')})` : ''}`;
+    return {
+      id: `site:${slug(code)}:tutorials-${key}`,
+      course: code,
+      title,
+      kind: 'tutorial',
+      tutorials: ns,
+      opens: list[0].opens.toISOString(),
+      due: at.toISOString(),
+      end: null,
+      fixedTime: true, // it's a session
+      autoDone: false,
+      url: siteCfg.tutorialUrl.replace('{n}', newest.n),
+      links: list.length > 1 ? list.map(({ t }) => [`Tutorial ${t.n}`, siteCfg.tutorialUrl.replace('{n}', t.n)]) : undefined,
+      posted: newest.posted,
+      live: list.some(({ t }) => t.posted === true),
+    };
+  });
 
   // For work done in steps (see `openSteps`): the step to do next, and whether Brightspace is
   // showing that quiz yet. `unlocked` stays unset for snapshots from before quizzes were recorded.
