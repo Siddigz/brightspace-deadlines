@@ -99,6 +99,11 @@ function relative(t) {
 // Time slots (events, test sittings, exam windows) have an end and are never "overdue".
 const isSlot = (d) => d.kind === 'event' || !!d.slot;
 
+// A test you can sit any time in a window of more than a day (a take-home final) is listed at the
+// moment it opens, the earliest you can start, until then; after that, under the day it closes.
+const listedAtOpen = (d, now = Date.now()) =>
+  d.kind === 'test' && !!d.opens && Date.parse(d.opens) > now && Date.parse(d.due) - Date.parse(d.opens) > DAY;
+
 function whenText(d) {
   const due = new Date(d.due);
   const end = d.end ? new Date(d.end) : null;
@@ -110,6 +115,7 @@ function whenText(d) {
       : `${shortFmt.format(due)} – ${shortFmt.format(end)}`;
   }
   const opens = d.opens ? new Date(d.opens) : null;
+  if (listedAtOpen(d)) return `opens ${timeFmt.format(opens)} · closes ${shortFmt.format(due)}, ${timeFmt.format(due)}`;
   if (opens && opens > Date.now()) {
     const sameDay = dayKey(opens) === dayKey(due);
     if (sameDay && due - opens > 20 * 3600e3) return 'open all day';
@@ -206,7 +212,7 @@ function renderDeadlines() {
 
   let items = allDeadlines(state.snapshot, prefs)
     .filter((d) => !state.hiddenCourses.has(d.course) && (!prefs.hidden[d.id] || d.locked))
-    .map((d) => ({ ...d, t: Date.parse(d.due), done: isDone(d, prefs) }));
+    .map((d) => ({ ...d, t: Date.parse(listedAtOpen(d, now) ? d.opens : d.due), done: isDone(d, prefs) }));
 
   if (!state.showDone) items = items.filter((d) => !d.done);
   if (state.bonusOnly) items = items.filter((d) => d.bonus);
