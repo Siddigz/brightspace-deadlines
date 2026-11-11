@@ -160,3 +160,13 @@ test('each sync records which quizzes Brightspace is showing, so a lesson quiz r
   // A snapshot from before quizzes were recorded can't say either way.
   assert.equal(courseDeadlines({ code: 'CLCV 2105', ou: 4, deadlines: [] }).find((d) => d.title === 'Lesson 6: Quiz 1 and Quiz 2').unlocked, undefined);
 });
+
+test('BIOL 1010 self-summaries and self-checks never show as deadlines; tests still do', () => {
+  const due = new Date(2026, 10, 18, 23, 59).toISOString();
+  const titles = courseDeadlines({ code: 'BIOL 1010', ou: 6, deadlines: [
+    { id: '6:quiz:1', title: 'Chapter 12 Self-Summary', kind: 'quiz', due },
+    { id: '6:quiz:2', title: 'Self Check: Mitosis', kind: 'quiz', due },
+    { id: '6:quiz:3', title: 'Test #8', kind: 'test', due },
+  ] }).map((d) => d.title);
+  assert.deepEqual(titles, ['Test #8']);
+});

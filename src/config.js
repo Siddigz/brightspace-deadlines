@@ -59,7 +59,7 @@ export const PERSONAL_DEADLINES = [
 
 // Course websites read on every sync (src/coursesite.js). `url` is the wiki source of the course
 // page. Each tutorial `session` (weekday 0 = Sun ... 2 = Tue) gets one deadline naming every
-// ungraded tutorial you can get marked there: from your first session after its release until
+// ungraded tutorial you can get marked there: from your first session on or after its release day until
 // `tutorialDays` after release (the site's rule: "marked within 8 days"). Assignment due dates replace the ones in EXTRA_DEADLINES.
 export const COURSE_SITES = {
   'COMP 3000': {
@@ -93,6 +93,12 @@ export const LATE_POLICIES = {
   'COMP 2406': [
     { match: '^Assignment\\b', hours: 12, penalty: '-2% per 15 min late' },
   ],
+};
+
+// Brightspace items (quizzes, folders, calendar events) that never show as deadlines, by course.
+// Patterns match the item name, ignoring case.
+export const SKIP_DEADLINES = {
+  'BIOL 1010': ['self[- ]?summary', 'self[- ]?check'],
 };
 
 // Anything due partway through a day (Friday 10:00 AM, Thursday 2:30 PM) shows as due at 11:59 PM

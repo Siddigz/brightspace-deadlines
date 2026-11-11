@@ -36,10 +36,10 @@ test('COMP 3000 site tutorials: one deadline per B2 session, naming every tutori
   const tut = courseDeadlines(course([1, 2, 3, 4])).filter((d) => d.kind === 'tutorial');
   // Tutorials 5-8 are released Mondays Nov 2-23 and can be marked at that week's and the next Tuesday's session.
   assert.deepEqual(tut.map((d) => [new Date(d.due).getDate(), d.title]), [
-    [3, 'Tutorial 5: get it marked at your B2 tutorial'],
-    [10, 'Tutorials 5 + 6: get them marked at your B2 tutorial (last chance for 5)'],
-    [17, 'Tutorials 6 + 7: get them marked at your B2 tutorial (last chance for 6)'],
-    [24, 'Tutorials 7 + 8: get them marked at your B2 tutorial (last chance for 7)'],
+    [3, 'Tutorial 5: get it marked at your B2 tutorial (first chance)'],
+    [10, 'Tutorials 5 + 6: get them marked at your B2 tutorial (first chance for 6, last chance for 5)'],
+    [17, 'Tutorials 6 + 7: get them marked at your B2 tutorial (first chance for 7, last chance for 6)'],
+    [24, 'Tutorials 7 + 8: get them marked at your B2 tutorial (first chance for 8, last chance for 7)'],
     [1, 'Tutorial 8: get it marked at your B2 tutorial (last chance)'],
   ]);
   assert.equal(new Date(tut[1].due).toString(), new Date(2026, 10, 10, 18, 5).toString());
@@ -50,7 +50,7 @@ test('COMP 3000 site tutorials: one deadline per B2 session, naming every tutori
   assert.equal(new Date(tut[1].behindSince).toString(), new Date(2026, 10, 3, 18, 5).toString());
   // Once Tutorial 5 is graded it drops out of every session.
   const later = courseDeadlines(course([1, 2, 3, 4, 5])).filter((d) => d.kind === 'tutorial');
-  assert.equal(later[0].title, 'Tutorial 6: get it marked at your B2 tutorial');
+  assert.equal(later[0].title, 'Tutorial 6: get it marked at your B2 tutorial (first chance)');
   assert.equal(later[0].id, tut[1].id); // same session, same id, so a tick survives
 });
 
@@ -131,4 +131,17 @@ test('COMP 3000 Assignment 2 keeps its announced date, over the site and the Bri
   assert.equal(synced[0].realDue, undefined);
   assert.equal(synced[0].live, true);
   assert.equal(rows(folder(true))[0].autoDone, true);
+});
+
+test('COMP 3000 tutorials released on a Tuesday can first be marked at that evening\'s B2 session', () => {
+  const site = { assignments: [], tutorials: [
+    { n: 7, available: '2026-11-24', page: 'T7', posted: false },
+    { n: 8, available: '2026-12-01', page: 'T8', posted: false },
+  ] };
+  const tut = courseDeadlines({ code: 'COMP 3000', ou: 3, deadlines: [], site }).filter((d) => d.kind === 'tutorial');
+  assert.deepEqual(tut.map((d) => [new Date(d.due).getDate(), d.title]), [
+    [24, 'Tutorial 7: get it marked at your B2 tutorial (first chance)'],
+    [1, 'Tutorials 7 + 8: get them marked at your B2 tutorial (first chance for 8, last chance for 7)'],
+    [8, 'Tutorial 8: get it marked at your B2 tutorial (last chance)'],
+  ]);
 });

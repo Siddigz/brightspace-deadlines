@@ -1,7 +1,7 @@
 // Pulls everything the dashboard needs from Brightspace into one plain-JSON snapshot.
 // Only depends on a client with get / getAllObjects / getAllItems (see d2l.js).
 
-import { BASE, COURSE_ORDER, COURSE_SITES, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, DUE_NIGHT_BEFORE, ONE_AT_A_TIME } from './config.js';
+import { BASE, COURSE_ORDER, COURSE_SITES, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, DUE_NIGHT_BEFORE, ONE_AT_A_TIME, SKIP_DEADLINES } from './config.js';
 import { LP, LE } from './d2l.js';
 
 const DAY = 86400000;
@@ -212,6 +212,7 @@ export function courseDeadlines(course) {
   // Config entries marked `keepDate` give their date to the Brightspace item of the same name.
   const kept = EXTRA_DEADLINES.filter((x) => x.course === code && x.keepDate);
   const fromBrightspace = (course.deadlines || []).filter((d) => !d.id.startsWith('cfg:')) // older snapshots baked these in
+    .filter((d) => !(SKIP_DEADLINES[code] || []).some((p) => new RegExp(p, 'i').test(d.title)))
     .map((d) => (/:(quiz|drop):/.test(d.id) ? { ...d, live: true } : d))
     .map((d) => {
       const k = kept.find((x) => norm(x.title) === norm(d.title));
@@ -240,7 +241,7 @@ export function courseDeadlines(course) {
     return n && site?.assignments.find((a) => a.n === Number(n[1]));
   };
   // One deadline per tutorial session, naming every ungraded tutorial you can get marked there:
-  // each one from your first session after its release until `tutorialDays` after release.
+  // each one from your first session on or after its release day until `tutorialDays` after release.
   const sessions = new Map(); // day -> { at, tutorials: [{ t, opens, last }] }
   for (const t of (siteCfg && site ? site.tutorials : []).filter((t) => !graded(`^Tutorial ${t.n}$`))) {
     const [y, m, d] = t.available.split('-').map(Number);
@@ -248,8 +249,9 @@ export function courseDeadlines(course) {
     const [hh, mm] = time.split(':').map(Number);
     const opens = new Date(y, m - 1, d);
     const closes = new Date(y, m - 1, d + siteCfg.tutorialDays, 23, 59);
-    // Your first session after the release day (released Monday -> Tuesday's session).
-    const at = new Date(y, m - 1, d + 1, hh, mm);
+    // Your first session on or after the release day (released Monday -> Tuesday's session;
+    // released Tuesday -> that evening's session).
+    const at = new Date(y, m - 1, d, hh, mm);
     at.setDate(at.getDate() + ((weekday - at.getDay() + 7) % 7));
     let firstAt = null;
     for (; at <= closes; at.setDate(at.getDate() + 7)) {
@@ -266,9 +268,14 @@ export function courseDeadlines(course) {
     const newest = list[list.length - 1].t;
     // Tutorials whose first session came before this one: you missed it, so this is a catch-up.
     const behind = list.filter((x) => +x.firstAt !== +at);
-    const title = ns.length === 1
-      ? `Tutorial ${ns[0]}: get it marked at your ${siteCfg.session.name}${list[0].last ? ' (last chance)' : ''}`
-      : `Tutorials ${ns.join(' + ')}: get them marked at your ${siteCfg.session.name}${lastFor.length ? ` (last chance for ${lastFor.join(' + ')})` : ''}`;
+    // This session is the first chance for tutorials released just before it.
+    const firstFor = list.filter((x) => +x.firstAt === +at && !x.last).map(({ t }) => t.n);
+    const chances = ns.length === 1
+      ? [list[0].last ? (+list[0].firstAt === +at ? 'only chance' : 'last chance') : firstFor.length ? 'first chance' : null]
+      : [firstFor.length && `first chance for ${firstFor.join(' + ')}`, lastFor.length && `last chance for ${lastFor.join(' + ')}`];
+    const note = chances.filter(Boolean).join(', ');
+    const title = `${ns.length === 1 ? `Tutorial ${ns[0]}: get it marked` : `Tutorials ${ns.join(' + ')}: get them marked`}`
+      + ` at your ${siteCfg.session.name}${note ? ` (${note})` : ''}`;
     return {
       id: `site:${slug(code)}:tutorials-${key}`,
       course: code,
