@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyOutline, computeCourse, termSheet, letter } from '../src/grades.js';
-import { OUTLINES } from '../src/config.js';
+import { OUTLINES } from '../src/courses.example.js';
 
 const close = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -294,4 +294,29 @@ test('COMP 3000 lecture participation is dropped when it would lower the grade',
   close(r.totalW, 95);
   close(r.current, 75);
   assert.ok(r.components.find((c) => c.onlyHelps).ignored);
+});
+
+test('CLCV 2105: once 7 mini-assignments a term are marked, the rest leave and best 6 of 7 count', () => {
+  const ma = (n, points) => ({ id: `m${n}`, name: `Lesson ${n}: Mini-assignment submission`, categoryId: 'ma1', max: 100, weight: 1.25, points, outOf: points == null ? null : 100 });
+  const marks = { 1: 70, 3: 80, 4: 80, 5: 80, 6: 80, 8: 80, 9: 80 };
+  const sheet = (m) => applyOutline({
+    system: 'Weighted',
+    categories: [{ id: 'ma1', name: 'Term 1: Mini-Assignments', weight: 15, drop: 6 }],
+    items: Array.from({ length: 12 }, (_, i) => ma(i + 1, m[i + 1] ?? null)),
+  }, OUTLINES['CLCV 2105']);
+
+  const capped = sheet(marks);
+  assert.equal(capped.items.length, 7);
+  assert.equal(capped.categories[0].drop, 1);
+  const r = computeCourse(capped);
+  const c = r.components[0];
+  close(c.pct, 80);
+  assert.deepEqual(c.dropped, ['m1']);
+  close(c.coverage, 1);
+  assert.deepEqual(c.limited, { max: 7, of: 12 });
+
+  // Six marked: nothing changes yet.
+  const { 9: _, ...six } = marks;
+  assert.equal(sheet(six).items.length, 12);
+  assert.equal(sheet(six).categories[0].drop, 6);
 });

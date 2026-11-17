@@ -17,7 +17,7 @@ if (onDisk !== running) {
     // Just tried and it's still stale: don't loop, say what to do.
     const note = document.createElement('div');
     note.className = 'banner';
-    note.textContent = 'The extension is running old code and reloading it didn\'t help. Open chrome://extensions and press the reload arrow on Course Tracker.';
+    note.textContent = 'The extension is running old code and reloading it didn\'t help. Open chrome://extensions and press the reload arrow on Brightspace Deadlines.';
     document.querySelector('.top').after(note);
   }
 }

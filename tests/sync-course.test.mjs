@@ -170,3 +170,21 @@ test('BIOL 1010 self-summaries and self-checks never show as deadlines; tests st
   ] }).map((d) => d.title);
   assert.deepEqual(titles, ['Test #8']);
 });
+
+test('CLCV 2105: with 7 mini-assignments in for a term, that term\'s other ones drop off', () => {
+  const fall = [1, 3, 4, 5, 6, 8, 9];
+  const course = {
+    code: 'CLCV 2105', ou: 1,
+    deadlines: [{ id: '1:drop:5', title: 'Lesson 1: Mini-assignment instructions + submission', kind: 'assignment', due: '2026-11-09T04:59:59.000Z', autoDone: true }],
+    gradedNames: fall.map((n) => `Lesson ${n}: Mini-assignment submission`),
+  };
+  const titles = courseDeadlines(course).map((d) => d.title).filter((t) => /Mini-assignment/.test(t));
+  const lessons = titles.map((t) => Number(/^Lesson (\d+)/.exec(t)[1]));
+  for (const n of [2, 7, 10, 11, 12]) assert.ok(!lessons.includes(n), `lesson ${n} should be gone`);
+  for (const n of [1, 3, 9, 13, 24]) assert.ok(lessons.includes(n), `lesson ${n} should stay`);
+
+  // Six in (lesson 1 counts once despite two titles): nothing drops yet.
+  const six = courseDeadlines({ ...course, gradedNames: course.gradedNames.slice(0, -1) })
+    .filter((d) => /^Lesson 10: Mini-assignment/.test(d.title));
+  assert.equal(six.length, 1);
+});

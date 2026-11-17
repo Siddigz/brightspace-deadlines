@@ -3,3 +3,10 @@ node_modules/
 Thumbs.db
 *.log
 phone-dist/
+
+# Your own courses and deadlines (start from src/courses.example.js)
+src/courses.js
+
+# Local Claude Code files
+.claude/
+CLAUDE.local.md

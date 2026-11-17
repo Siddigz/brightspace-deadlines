@@ -1,7 +1,7 @@
 // Pulls everything the dashboard needs from Brightspace into one plain-JSON snapshot.
 // Only depends on a client with get / getAllObjects / getAllItems (see d2l.js).
 
-import { BASE, COURSE_ORDER, COURSE_SITES, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, DUE_NIGHT_BEFORE, ONE_AT_A_TIME, SKIP_DEADLINES } from './config.js';
+import { BASE, COURSE_ORDER, COURSE_SITES, DUE_OVERRIDES, EXTRA_DEADLINES, BONUS_DEADLINES, DUE_NIGHT_BEFORE, ONE_AT_A_TIME, SKIP_DEADLINES, OUTLINES } from './config.js';
 import { LP, LE } from './d2l.js';
 
 const DAY = 86400000;
@@ -240,17 +240,20 @@ export function courseDeadlines(course) {
     const n = /^Assignment (\d+)$/.exec(title);
     return n && site?.assignments.find((a) => a.n === Number(n[1]));
   };
-  // One deadline per tutorial session, naming every ungraded tutorial you can get marked there:
-  // each one from your first session on or after its release day until `tutorialDays` after release.
+  // One deadline per tutorial session, naming every ungraded tutorial you can get marked there.
+  // The site lists each tutorial's due date; it can be marked from `tutorialDays` before that
+  // (the outline: "within 8 days of the tutorial being made available") until the due day.
   const sessions = new Map(); // day -> { at, tutorials: [{ t, opens, last }] }
   for (const t of (siteCfg && site ? site.tutorials : []).filter((t) => !graded(`^Tutorial ${t.n}$`))) {
-    const [y, m, d] = t.available.split('-').map(Number);
+    // Older site versions (and snapshots) give the release day instead of the due day.
+    const [y, m, day] = (t.due ?? t.available).split('-').map(Number);
+    const dueDay = t.due ? day : day + siteCfg.tutorialDays;
+    const d = dueDay - siteCfg.tutorialDays;
     const { weekday, time } = siteCfg.session;
     const [hh, mm] = time.split(':').map(Number);
     const opens = new Date(y, m - 1, d);
-    const closes = new Date(y, m - 1, d + siteCfg.tutorialDays, 23, 59);
-    // Your first session on or after the release day (released Monday -> Tuesday's session;
-    // released Tuesday -> that evening's session).
+    const closes = new Date(y, m - 1, dueDay, 23, 59);
+    // Your first session on or after the day it opens.
     const at = new Date(y, m - 1, d, hh, mm);
     at.setDate(at.getDate() + ((weekday - at.getDay() + 7) % 7));
     let firstAt = null;
@@ -352,7 +355,18 @@ export function courseDeadlines(course) {
   const gradedWords = gradedNames.map(words).filter((g) => g.length >= 4);
   const hasMark = (title) => gradedWords.some((g) => words(title) === g || words(title).startsWith(`${g} `));
 
-  return [...fromBrightspace, ...extras, ...tutorials].map(moveEarlier).map((d) => {
+  // OUTLINES[code].limits: once `max` matching items are handed in or marked, the rest can't be,
+  // so their deadlines go. The first capture group in `match` names the item (e.g. the lesson),
+  // so two titles for the same lesson count once.
+  const limitedOut = (title) => (OUTLINES?.[code]?.limits || []).some((l) => {
+    const re = new RegExp(l.match, 'i');
+    if (!re.test(title)) return false;
+    const done = new Set(gradedNames.map((n) => re.exec(n)).filter(Boolean).map((m) => (m[1] ?? m[0]).toLowerCase()));
+    const own = re.exec(title);
+    return done.size >= l.max && !done.has((own[1] ?? own[0]).toLowerCase());
+  });
+
+  return [...fromBrightspace, ...extras, ...tutorials].filter((d) => !limitedOut(d.title)).map(moveEarlier).map((d) => {
     if (!d.autoDone && hasMark(d.title)) d = { ...d, autoDone: true };
     // Hand-in work only: a quiz or exam neither waits its turn nor holds the next paper back.
     if (d.live && d.kind === 'assignment' && ONE_AT_A_TIME.includes(code)) d = { ...d, oneAtATime: true };

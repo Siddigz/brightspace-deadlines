@@ -18,7 +18,7 @@ async function show() {
   form.repo.value = phone.repo;
   status.innerHTML = `Sharing to <b>${phone.repo}</b>`
     + ` (<a href="https://github.com/${phone.repo}" target="_blank">view</a>).<br>`
-    + (phone.error ? `Last upload failed: ${phone.error}` : phone.uploadedAt ? `Last uploaded ${when(phone.uploadedAt)}.` : '');
+    + (phone.error ? `Last upload failed: ${phone.error}` : phone.uploadedAt ? `Checked ${when(phone.uploadedAt)} (only sends what changed).` : '');
 }
 
 form.addEventListener('submit', async (e) => {

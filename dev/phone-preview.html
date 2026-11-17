@@ -30,7 +30,7 @@
     const text = async (f) => (await fetch(`../${f}`, { cache: 'no-store' })).text();
     const files = {};
     for (const [p, f] of Object.entries(APP_FILES)) files[p] = await text(f);
-    const app = { title: 'Course Tracker', entry: 'boot.js', body: await text('phone/app.html'), css: await text('dashboard.css'), files };
+    const app = { title: 'Brightspace Deadlines', entry: 'boot.js', body: await text('phone/app.html'), css: await text('dashboard.css'), files };
     const data = { snapshot: fixture, syncError: null, deadlines: allDeadlines(fixture, { custom: [] }), config: { COURSE_COLORS, CODE_LABELS, BASE, OUTLINES, LETTERS } };
 
     // Fake repo: path -> { text, sha }.

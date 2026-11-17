@@ -19,7 +19,7 @@ const APP_FILES = {
   'src/repo.js': 'src/repo.js',
 };
 
-// { token, repo, base, uploadedAt, appHash, error }
+// { token, repo, base, uploadedAt, appHash, dataHash, error }
 export async function phoneSettings() {
   const { phone = null } = await chrome.storage.local.get('phone');
   return phone;
@@ -46,11 +46,23 @@ async function dataFile() {
 async function appFile() {
   const paths = Object.keys(APP_FILES);
   const [body, css, ...sources] = await Promise.all([text('phone/app.html'), text('dashboard.css'), ...paths.map((p) => text(APP_FILES[p]))]);
-  const app = { title: 'Course Tracker', entry: 'boot.js', body, css, files: Object.fromEntries(paths.map((p, i) => [p, sources[i]])) };
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(app)));
-  const hash = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const app = { title: 'Brightspace Deadlines', entry: 'boot.js', body, css, files: Object.fromEntries(paths.map((p, i) => [p, sources[i]])) };
+  const hash = await sha256(app);
   return { app: { ...app, hash }, hash };
 }
+
+async function sha256(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(value)));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// A fingerprint of the data leaving out when the sync ran (or failed), so a sync that found nothing new
+// doesn't write (each write is a commit in the repo).
+const dataHash = (data) => sha256({
+  ...data,
+  snapshot: data.snapshot && { ...data.snapshot, syncedAt: null },
+  syncError: data.syncError && { ...data.syncError, at: null },
+});
 
 export async function setUp(token, repo) {
   await checkRepo({ repo, token });
@@ -83,11 +95,13 @@ export const syncPhonePrefs = () => serial(() => guard(async (phone) => {
   await patchSettings({ base: merged });
 }));
 
-// Data every time; the page's code only when it has changed (or `force`).
+// Data and the page's code, each only when it has changed (or `force`).
 export const upload = ({ force = false } = {}) => serial(() => guard(async (phone) => {
-  const files = { 'data.json': await dataFile() };
-  const { app, hash } = await appFile();
+  const data = await dataFile();
+  const [{ app, hash }, dHash] = await Promise.all([appFile(), dataHash(data)]);
+  const files = {};
+  if (force || dHash !== phone.dataHash) files['data.json'] = data;
   if (force || hash !== phone.appHash) files['app.json'] = app;
-  await writeJSON(phone, files);
-  await patchSettings({ uploadedAt: new Date().toISOString(), appHash: hash });
+  if (Object.keys(files).length) await writeJSON(phone, files);
+  await patchSettings({ uploadedAt: new Date().toISOString(), appHash: hash, dataHash: dHash });
 })).then(syncPhonePrefs);

@@ -6,7 +6,7 @@ const item = (id, name, categoryId, max, weight, points = null) => ({ id, name, 
 const dl = (id, course, title, kind, due, extra = {}) => ({ id, course, title, kind, opens: null, due, autoDone: false, live: true, url: `${B}/d2l/home`, ...extra });
 
 const biolTests = [
-  ['2026-09-23', 10], ['2026-09-30'], ['2026-10-07'], ['2026-10-14'], ['2026-10-21'],
+  ['2026-09-23', 8], ['2026-09-30'], ['2026-10-07'], ['2026-10-14'], ['2026-10-21'],
   ['2026-11-04'], ['2026-11-11'], ['2026-11-18'], ['2026-11-25'], ['2026-12-02'], ['2026-12-09'],
 ];
 
@@ -55,7 +55,7 @@ export const fixture = {
         ],
         items: [
           ...Array.from({ length: 12 }, (_, i) => item(`ma${i}`, `Lesson ${i + 1}: Mini-assignment submission`, 'ma1', 100, 1.25)),
-          ...Array.from({ length: 24 }, (_, i) => item(`q${i}`, `Lesson ${Math.floor(i / 2) + 1}: Quiz ${(i % 2) + 1}`, 'q1', 100, 0.2083333, i < 6 ? 100 : null)),
+          ...Array.from({ length: 24 }, (_, i) => item(`q${i}`, `Lesson ${Math.floor(i / 2) + 1}: Quiz ${(i % 2) + 1}`, 'q1', 100, 0.2083333, i < 6 ? [90, 100, 80, 100, 95, 85][i] : null)),
           ...Array.from({ length: 12 }, (_, i) => item(`p${i}`, `Lesson ${i + 1}: Participation Report Quiz`, 'p1', 10, 0.4166667, i === 0 ? 0 : null)),
           ...Array.from({ length: 8 }, (_, i) => item(`bn${i}`, `Bonus Marks for Live Group Discussion ${i + 1}`, 'bn', 0.5, 0.375)),
           item('fe', 'Fall Exam', 'fe', 100, 100),
@@ -93,7 +93,7 @@ export const fixture = {
           { id: 'x', name: 'Tests', weight: 40, drop: 1 },
         ],
         items: [
-          item('t1', 'Tutorial 1', 't', 15, 2, 15), item('t2', 'Tutorial 2', 't', 25, 2, 22),
+          item('t1', 'Tutorial 1', 't', 15, 2, 13), item('t2', 'Tutorial 2', 't', 25, 2, 20),
           ...[21, 16, 17, 18, 16, 17, 16, 17].map((m, i) => item(`t${i + 3}`, `Tutorial ${i + 3}`, 't', m, 2)),
           item('a1', 'Assignment 1 - Client-side Programming', 'a', 100, 5), item('a2', 'Assignment 2 - Server-side Programming', 'a', 100, 5),
           item('a3', 'Assignment 3 - Express and PUG', 'a', 125, 5), item('a4', 'Assignment 4 - MongoDB and Sessions', 'a', 100, 5),

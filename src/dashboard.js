@@ -176,7 +176,7 @@ function renderHeader() {
   btn.textContent = state.syncing ? (onPhone ? 'Refreshing…' : 'Syncing…') : (onPhone ? 'Refresh' : 'Sync now');
   const s = state.snapshot;
   status.textContent = s
-    ? `${s.user ? s.user + ' · ' : ''}${onPhone ? 'Laptop synced' : 'Synced'} ${longFmt.format(new Date(s.syncedAt))}`
+    ? `${s.user ? s.user + ' · ' : ''}${onPhone ? 'Last change from laptop' : 'Synced'} ${longFmt.format(new Date(s.syncedAt))}`
     : state.syncing ? 'Syncing with Brightspace…' : 'Not synced yet';
 
   const banner = document.getElementById('banner');
@@ -382,7 +382,7 @@ function componentRows(course, r) {
     const graded = c.items.filter((it) => it.actual != null).length;
     html += `<tr class="comp">
       <td>${c.items.length ? `<button class="icon-btn" data-expand="${esc(key)}" aria-expanded="${open}">${open ? '▾' : '▸'}</button>` : ''}${esc(c.name)}
-        <span class="muted"> · ${graded}/${c.items.length} graded${c.drop ? `, lowest ${c.drop} dropped` : ''}</span>${c.bonus ? ' <span class="pill-bonus">bonus</span>' : ''}${helps(c)}</td>
+        <span class="muted"> · ${graded}/${c.items.length} graded${c.drop ? `, lowest ${c.drop} dropped` : ''}${c.limited ? ` · only ${c.limited.max} of the ${c.limited.of} could be handed in, all ${c.limited.max} used` : ''}</span>${c.bonus ? ' <span class="pill-bonus">bonus</span>' : ''}${helps(c)}</td>
       <td class="r num">${weightCell(c.W)}</td>
       <td class="r num">${c.pct == null ? '–' : `<b>${fmt1(c.pct)}%</b>`}</td>
       <td></td>

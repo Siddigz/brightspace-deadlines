@@ -22,10 +22,13 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 //   groups:          "best N of M" groups of items with a shared total weight
 //   categoryWeights: category name -> weight
 //   itemWeights:     item name pattern -> weight
+//   limits:          [{ match, max }]: at most `max` items matching `match` may be handed in (e.g. 7
+//                    mini-assignments a term). Once that many have a mark the rest are gone, and their
+//                    category drops that many fewer (Brightspace's "drop lowest" counts every slot).
 export function applyOutline(sheet, outline) {
   if (!outline) return sheet;
   let items = sheet.items.filter((it) => !(outline.ignore || []).some((p) => matches(p, it.name)));
-  const categories = sheet.categories.map((c) => {
+  let categories = sheet.categories.map((c) => {
     const w = outline.categoryWeights?.[c.name];
     return w == null ? c : { ...c, weight: w, fromOutline: true };
   });
@@ -59,6 +62,19 @@ export function applyOutline(sheet, outline) {
     const out = hit ? { ...it, weight: hit[1], fromOutline: true } : it;
     return (outline.onlyHelps || []).some((p) => matches(p, it.name)) ? { ...out, onlyHelps: true } : out;
   });
+
+  for (const l of outline.limits || []) {
+    const hits = items.filter((it) => matches(l.match, it.name));
+    if (hits.filter((it) => it.points != null).length < l.max) continue;
+    const gone = hits.filter((it) => it.points == null);
+    const before = items;
+    items = items.filter((it) => !gone.includes(it));
+    categories = categories.map((c) => {
+      const n = gone.filter((it) => it.categoryId === c.id).length;
+      const of = before.filter((it) => it.categoryId === c.id).length;
+      return n ? { ...c, drop: Math.max(0, (c.drop || 0) - n), limited: { max: l.max, of } } : c;
+    });
+  }
 
   for (const g of outline.groups || []) {
     const id = `outline:${slug(g.name)}`;
@@ -123,6 +139,7 @@ function components(sheet) {
       name: c.name,
       W,
       drop,
+      limited: c.limited,
       bonus: isBonusName(c.name) || (members.length > 0 && members.every((m) => m.bonus)),
       onlyHelps: members.length > 0 && members.every((m) => m.onlyHelps),
       items: members.map((it) => ({ ...it, share: shareOf(it) })),

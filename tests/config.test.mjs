@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { EXTRA_DEADLINES, OUTLINES, COURSE_ORDER } from '../src/config.js';
+import { EXTRA_DEADLINES, OUTLINES, COURSE_ORDER } from '../src/courses.example.js';
 import { localDate } from '../src/sync.js';
 import { applyOutline, computeCourse } from '../src/grades.js';
 

@@ -1,5 +1,5 @@
-// Builds the public half of the phone page into phone-dist/, ready to push to a public GitHub
-// Pages repo. It's only a sign-in box (phone-public/) plus two plain icons: the page's real code
+// Builds the public half of the phone page into phone-dist/. GitHub Actions publishes it to this
+// repo's GitHub Pages (.github/workflows/phone-page.yml). It's only a sign-in box (phone-public/) plus two plain icons: the page's real code
 // and your data are uploaded by the extension to your private repo (see src/phone.js), so
 // nothing here says what the page is.
 
@@ -8,7 +8,7 @@ import { deflateSync, crc32 } from 'node:zlib';
 
 const OUT = 'phone-dist';
 
-// Keep phone-dist/.git (the Pages repo) between builds; replace everything else.
+// Replace everything in phone-dist/ (keeping a .git there, if you push it somewhere yourself).
 await mkdir(OUT, { recursive: true });
 for (const f of await readdir(OUT)) if (f !== '.git') await rm(`${OUT}/${f}`, { recursive: true, force: true });
 await cp('phone-public', OUT, { recursive: true });
@@ -47,4 +47,4 @@ function icon(size) {
 }
 for (const s of [192, 512]) await writeFile(`${OUT}/icon-${s}.png`, icon(s));
 
-console.log(`Built ${OUT}/. Push it to your public Pages repo (see README, "Phone").`);
+console.log(`Built ${OUT}/. Pushing phone-public/ changes to main publishes it (see README, "Phone").`);

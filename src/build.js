@@ -6,7 +6,7 @@
 // reloaded instead of quietly syncing with old code.
 
 const FILES = [
-  'manifest.json', 'src/background.js', 'src/store.js', 'src/sync.js', 'src/d2l.js', 'src/config.js',
+  'manifest.json', 'src/background.js', 'src/store.js', 'src/sync.js', 'src/d2l.js', 'src/config.js', 'src/courses.js',
   'src/prefs.js', 'src/coursesite.js', 'src/phone.js', 'src/repo.js', 'src/build.js',
 ];
 

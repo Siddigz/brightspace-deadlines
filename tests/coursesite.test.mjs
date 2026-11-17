@@ -26,6 +26,10 @@ test('COMP 3000 site: tutorials and assignments are read from their tables', () 
   assert.equal(site.assignments[1].page, 'Operating Systems 2026F: Assignment 2');
   assert.equal(site.tutorials[4].page, 'Operating Systems 2026F: Tutorial 5');
   assert.deepEqual(parseCourseSite('nothing here', 2026), { tutorials: [], assignments: [] });
+  // The site later switched the tutorials table to due dates.
+  const due = parseCourseSite(raw.replace('Date Available', 'Due Date'), 2026);
+  assert.equal(due.tutorials[3].due, '2026-10-05');
+  assert.equal(due.tutorials[3].available, undefined);
 });
 
 test('COMP 3000 site tutorials: one deadline per B2 session, naming every tutorial you can get marked there; gone once graded', () => {
@@ -133,15 +137,15 @@ test('COMP 3000 Assignment 2 keeps its announced date, over the site and the Bri
   assert.equal(rows(folder(true))[0].autoDone, true);
 });
 
-test('COMP 3000 tutorials released on a Tuesday can first be marked at that evening\'s B2 session', () => {
+test('COMP 3000 tutorials listed by due date can be marked at the B2 sessions in the 8 days before it', () => {
   const site = { assignments: [], tutorials: [
-    { n: 7, available: '2026-11-24', page: 'T7', posted: false },
-    { n: 8, available: '2026-12-01', page: 'T8', posted: false },
+    { n: 7, due: '2026-11-24', page: 'T7', posted: false },
+    { n: 8, due: '2026-12-01', page: 'T8', posted: false },
   ] };
   const tut = courseDeadlines({ code: 'COMP 3000', ou: 3, deadlines: [], site }).filter((d) => d.kind === 'tutorial');
   assert.deepEqual(tut.map((d) => [new Date(d.due).getDate(), d.title]), [
-    [24, 'Tutorial 7: get it marked at your B2 tutorial (first chance)'],
-    [1, 'Tutorials 7 + 8: get them marked at your B2 tutorial (first chance for 8, last chance for 7)'],
-    [8, 'Tutorial 8: get it marked at your B2 tutorial (last chance)'],
+    [17, 'Tutorial 7: get it marked at your B2 tutorial (first chance)'],
+    [24, 'Tutorials 7 + 8: get them marked at your B2 tutorial (first chance for 8, last chance for 7)'],
+    [1, 'Tutorial 8: get it marked at your B2 tutorial (last chance)'],
   ]);
 });

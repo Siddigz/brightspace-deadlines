@@ -15,20 +15,26 @@ export function siteDate(text, year) {
   return m[3] ? `${day}T${m[3].padStart(2, '0')}:${m[4]}` : day;
 }
 
-// Rows of the table under a "==Heading==": [[date text, link text], ...].
-function tableRows(raw, heading) {
+// The wiki source under a "==Heading==", up to the next heading.
+function section(raw, heading) {
   const start = raw.search(new RegExp(`^==\\s*${heading}\\s*==`, 'mi'));
-  if (start === -1) return [];
+  if (start === -1) return '';
   const rest = raw.slice(start + 2);
   const end = rest.search(/^==[^=]/m);
-  const section = end === -1 ? rest : rest.slice(0, end);
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+// Rows of the table under a "==Heading==": [[date text, link text], ...].
+function tableRows(raw, heading) {
+  const body = section(raw, heading);
+  if (!body) return [];
   const text = (cell) => cell.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  return [...section.matchAll(/<tr[\s\S]*?<\/tr>/g)]
+  return [...body.matchAll(/<tr[\s\S]*?<\/tr>/g)]
     .map(([row]) => [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => text(c[1])))
     .filter((cells) => cells.length >= 2);
 }
 
-// Wiki source of the course page -> { tutorials: [{ n, available, page }], assignments: [{ n, due, page }] }.
+// Wiki source of the course page -> { tutorials: [{ n, due or available, page }], assignments: [{ n, due, page }] }.
 // `page` is the wiki page the row links to.
 export function parseCourseSite(raw, year) {
   const numbered = (heading, word, key) => tableRows(raw, heading).flatMap(([date, what]) => {
@@ -37,7 +43,8 @@ export function parseCourseSite(raw, year) {
     return link && when ? [{ n: Number(link[2]), [key]: when, page: link[1].trim() }] : [];
   });
   return {
-    tutorials: numbered('Tutorials', 'Tutorial', 'available'),
+    // The tutorials table has listed both release dates ("Date Available") and due dates ("Due Date").
+    tutorials: numbered('Tutorials', 'Tutorial', /Date Available/i.test(section(raw, 'Tutorials')) ? 'available' : 'due'),
     assignments: numbered('Assignments', 'Assignment', 'due'),
   };
 }
