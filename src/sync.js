@@ -128,6 +128,7 @@ async function syncCourse(client, course, now) {
       kind: /exam|midterm|mid-term|final|test/i.test(q.Name) ? 'test' : 'quiz',
       opens: q.StartDate,
       due,
+      closes: later(q.EndDate, due), // still takes attempts until then
       autoDone: q.GradeItemId != null && gradeById.has(String(q.GradeItemId)),
       bonus: isBonusItem(q.GradeItemId),
       url: `${BASE}/d2l/lms/quizzing/user/quiz_summary.d2l?qi=${q.QuizId}&ou=${ou}`,
@@ -155,6 +156,7 @@ async function syncCourse(client, course, now) {
       kind: 'assignment',
       opens: f.Availability?.StartDate || null,
       due,
+      closes: later(f.Availability?.EndDate, due), // still takes late hand-ins until then
       autoDone: submitted || (f.GradeItemId != null && gradeById.has(String(f.GradeItemId))),
       bonus: isBonusItem(f.GradeItemId),
       url: `${BASE}/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${f.Id}&ou=${ou}`,
@@ -377,6 +379,11 @@ export function courseDeadlines(course) {
 }
 
 // Monday 00:00 (local) of the week containing an ISO date; weeks run Monday to Sunday.
+// `end` if Brightspace keeps the item open past its due date, else null.
+function later(end, due) {
+  return end && Date.parse(end) > Date.parse(due) ? end : null;
+}
+
 function weekStart(iso) {
   const d = new Date(iso);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7)).toISOString();

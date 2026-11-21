@@ -326,11 +326,14 @@ function renderDeadlines() {
   const side = `<aside class="open-now" aria-label="Open now">
     <h2>Open now <span class="count">${open.length}</span></h2>
     ${open.map((d) => {
-      const t = Date.parse(d.realDue || d.due);
-      return `<a class="open-item" href="${esc(d.openUrl || d.url)}" target="_blank" style="--c:${color(d.course)}">
+      const due = Date.parse(d.realDue || d.due);
+      const late = due <= now; // past due, still accepted (lateUntil)
+      const t = late ? Date.parse(d.lateUntil) : due;
+      return `<a class="open-item ${late ? 'late' : ''}" href="${esc(d.openUrl || d.url)}" target="_blank" style="--c:${color(d.course)}">
         <span class="tag" style="--c:${color(d.course)}">${esc(label(d.course))}</span>
         <span class="open-title">${esc(d.openTitle || d.title)}</span>
-        <span class="open-when ${t - now < 2 * DAY ? 'soon' : ''}">closes ${esc(longFmt.format(new Date(t)))} · ${relative(t)}</span>
+        ${late ? `<span class="late-note">late: was due ${esc(longFmt.format(new Date(due)))} · ${esc(d.latePenalty)}</span>` : ''}
+        <span class="open-when ${late || t - now < 2 * DAY ? 'soon' : ''}">${late ? 'accepted until' : 'closes'} ${esc(longFmt.format(new Date(t)))} · ${relative(t)}</span>
         ${d.unlocked == null ? '' : `<span class="open-lock ${d.unlocked ? 'yes' : ''}">${d.unlocked ? 'Unlocked in Brightspace' : 'Locked in Brightspace: watch the lectures first'}</span>`}
       </a>`;
     }).join('') || '<p class="hint">Nothing is open right now.</p>'}

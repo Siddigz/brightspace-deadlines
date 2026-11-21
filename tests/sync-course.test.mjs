@@ -188,3 +188,22 @@ test('CLCV 2105: with 7 mini-assignments in for a term, that term\'s other ones 
     .filter((d) => /^Lesson 10: Mini-assignment/.test(d.title));
   assert.equal(six.length, 1);
 });
+
+test('a folder or quiz Brightspace keeps open past its due date is still accepted late until then', async () => {
+  const { withLatePolicy } = await import('../src/store.js');
+  const client = fakeClient({
+    name: 'COMP2406A Fundamentals of Web Applications (LEC) Fall 2026',
+    folders: [
+      { Id: 7, Name: 'Lab 3', DueDate: '2026-09-30T03:59:00.000Z', Availability: { EndDate: '2026-10-03T03:59:00.000Z' } },
+      { Id: 8, Name: 'Lab 4', DueDate: '2026-10-07T03:59:00.000Z', Availability: { EndDate: '2026-10-07T03:59:00.000Z' } },
+    ],
+    quizzes: [{ QuizId: 5, Name: 'Practice quiz', IsActive: true, DueDate: '2026-09-27T03:59:00.000Z', EndDate: '2026-10-04T03:59:00.000Z', StartDate: null, GradeItemId: null }],
+  });
+  const { courses: [course] } = await syncAll(client, NOW);
+  const byId = Object.fromEntries(course.deadlines.map((d) => [d.id, d]));
+  assert.equal(byId['1:drop:7'].closes, '2026-10-03T03:59:00.000Z');
+  assert.equal(byId['1:drop:8'].closes, null); // closes when it's due
+  assert.equal(byId['1:quiz:5'].closes, '2026-10-04T03:59:00.000Z');
+  const late = withLatePolicy({ ...byId['1:drop:7'], course: 'Nowhere' });
+  assert.equal(late.lateUntil, '2026-10-03T03:59:00.000Z');
+});

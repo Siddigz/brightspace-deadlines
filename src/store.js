@@ -70,10 +70,11 @@ const personalDeadlines = PERSONAL_DEADLINES.map((x) => ({
   locked: x.locked || x.kind === 'interview', // interviews always stay up
 }));
 
-// Adds `lateUntil` and `latePenalty` to work that's still accepted late (LATE_POLICIES).
+// Adds `lateUntil` and `latePenalty` to work that's still accepted late: by LATE_POLICIES, or
+// else because Brightspace keeps it open past its due date (`closes`).
 export function withLatePolicy(d) {
   const policy = (LATE_POLICIES[d.course] || []).find((p) => new RegExp(p.match, 'i').test(d.title));
-  if (!policy) return d;
+  if (!policy) return d.closes ? { ...d, lateUntil: d.closes, latePenalty: 'still open in Brightspace' } : d;
   const lateUntil = policy.until
     ? localDate(policy.until)
     : new Date(Date.parse(d.realDue || d.due) + policy.hours * 3600e3).toISOString();

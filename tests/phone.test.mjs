@@ -59,6 +59,19 @@ test('Open now: live things that have opened, not closed, not done; a group show
   assert.deepEqual(ids, ['no-start', 't6-first', 'open', 't4-final']);
 });
 
+test('Open now keeps past-due work that is still accepted late, until the late window closes', () => {
+  const now = Date.parse('2026-10-10T12:00:00Z');
+  const at = (days) => new Date(now + days * 86400000).toISOString();
+  const list = [
+    { id: 'late', live: true, due: at(-2), lateUntil: at(3) },
+    { id: 'late-closed', live: true, due: at(-5), lateUntil: at(-1) },
+    { id: 'late-done', live: true, due: at(-2), lateUntil: at(3), autoDone: true },
+    { id: 'open', live: true, due: at(1) },
+  ];
+  const ids = openNow(list, { done: {}, hidden: {}, checked: {} }, now).map((d) => d.id);
+  assert.deepEqual(ids, ['late', 'open']);
+});
+
 test('Open now, one-at-a-time course: later work waits until the earlier deadline has passed', () => {
   const day = 86400000;
   const base = Date.parse('2026-10-10T12:00:00Z');
